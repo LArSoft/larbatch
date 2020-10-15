@@ -1501,7 +1501,7 @@ EOF
     # Parse fcl file to extract process_name, and use that
     # as the application name for starting the consumer process.
 
-    APPNAME=`fhicl-dump $FCL | grep process_name: | tr -d '"' | awk '{print $2}'`
+    APPNAME=`fhicl-dump $FCL | grep process_name: | head -1 | tr -d '"' | awk '{print $2}'`
     if [ $? -ne 0 ]; then
       echo "fhicl-dump $FCL failed to run. May be missing a ups product, library, or fcl file."
       exit 1
