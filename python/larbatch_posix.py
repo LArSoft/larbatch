@@ -602,7 +602,7 @@ def walk(top, topdown=True):
         lines = larbatch_utilities.ifdh_ll(top, 1)
         for line in lines:
             words = line.split()
-            if len(words) > 5:
+            if len(words) > 5 and words[-1] != '__pycache__':
                 if words[0][0] == 'd':
                     dirs.append(words[-1])
                 else:
@@ -612,10 +612,11 @@ def walk(top, topdown=True):
             print('*** Larbatch_posix: Walk directory tree for %s using posix.' % top)
         contents = listdir(top)
         for obj in contents:
-            if isdir(os.path.join(top, obj)):
-                dirs.append(obj)
-            else:
-                files.append(obj)
+            if obj != '__pycache__':
+                if isdir(os.path.join(top, obj)):
+                    dirs.append(obj)
+                else:
+                    files.append(obj)
 
     if topdown:
         yield top, dirs, files
