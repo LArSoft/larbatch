@@ -1794,15 +1794,6 @@ done
 
 # Done looping over stages.
 
-# Setup up current version of ifdhc (may be different than version setup by larsoft).
-
-#echo "Setting up current version of ifdhc."
-#if [ x$IFDHC_DIR != x ]; then
-#  unsetup ifdhc
-#fi
-#setup ifdhc v1_3_2
-echo "IFDHC_DIR=$IFDHC_DIR"
-
 # Secondary sam cleanups.
 
 if [ $MIX_SAM -ne 0 ]; then
@@ -1997,6 +1988,16 @@ fi
 rm -f log.tar
 tar -cjf log.tar -C log .
 mv log.tar log
+
+# For copy back, setup up current version of ifdhc.
+# May be different than version setup by larsoft.
+
+echo "Setting up current version of ifdhc."
+if [ x$IFDHC_DIR != x ]; then
+  unsetup ifdhc
+fi
+setup ifdhc
+echo "IFDHC_DIR=$IFDHC_DIR"
 
 # Create remote output and log directories.
 
