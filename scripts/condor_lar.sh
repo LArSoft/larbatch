@@ -1017,11 +1017,11 @@ if [ x$LOCALDIR != x ]; then
   . $TMP/local/setup.local
   #echo "MRB_INSTALL=${MRB_INSTALL}."
   #echo "MRB_QUALS=${MRB_QUALS}."
-  echo "Setting up all localProducts."
-  if [ x$IFDHC_DIR != x ]; then
-    unsetup ifdhc
-  fi
-  mrbslp
+  #echo "Setting up all localProducts."
+  #if [ x$IFDHC_DIR != x ]; then
+  #  unsetup ifdhc
+  #fi
+  #mrbslp
 fi
 cd $TMP/work
 
@@ -1062,11 +1062,11 @@ if [ x$LOCALTAR != x ]; then
   . $TMP/local/setup.local
   #echo "MRB_INSTALL=${MRB_INSTALL}."
   #echo "MRB_QUALS=${MRB_QUALS}."
-  echo "Setting up all localProducts."
-  if [ x$IFDHC_DIR != x ]; then
-    unsetup ifdhc
-  fi
-  mrbslp
+  #echo "Setting up all localProducts."
+  #if [ x$IFDHC_DIR != x ]; then
+  #  unsetup ifdhc
+  #fi
+  #mrbslp
 fi
 
 # Setup specified version of top level run time products
