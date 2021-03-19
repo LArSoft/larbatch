@@ -38,7 +38,8 @@ class StageDef:
                  default_num_jobs, default_num_events, default_max_files_per_job, default_merge,
                  default_anamerge,
                  default_cpu, default_disk, default_memory, default_validate_on_worker,
-                 default_copy_to_fts, default_script, default_start_script, default_stop_script,
+                 default_copy_to_fts, default_cvmfs, default_stash, default_singularity,
+                 default_script, default_start_script, default_stop_script,
                  default_site, default_blacklist, check=True):
 
         # Assign default values.
@@ -121,6 +122,9 @@ class StageDef:
             self.schema = base_stage.schema
             self.validate_on_worker = base_stage. validate_on_worker
             self.copy_to_fts = base_stage.copy_to_fts
+            self.cvmfs = base_stage.cvmfs
+            self.stash = base_stage.stash
+            self.singularity = base_stage.singularity
             self.script = base_stage.script
             self.start_script = base_stage.start_script
             self.stop_script = base_stage.stop_script
@@ -202,6 +206,9 @@ class StageDef:
             self.schema = ''       # Sam schema.
             self.validate_on_worker = default_validate_on_worker # Validate-on-worker flag.
             self.copy_to_fts = default_copy_to_fts   # Upload-on-worker flag.
+            self.cvmfs = default_cvmfs               # Default cvmfs flag.
+            self.stash = default_stash               # Default stash flag.
+            self.singularity = default_singularity   # Default singularity flag.
             self.script = default_script             # Upload-on-worker flag.
             self.start_script = default_start_script # Upload-on-worker flag.
             self.stop_script = default_stop_script   # Upload-on-worker flag.
@@ -1022,7 +1029,25 @@ class StageDef:
         if copy_to_fts_elements:
             self.copy_to_fts = int(copy_to_fts_elements[0].firstChild.data)
 
-        # Batch script
+	# Cvmfs flag.
+
+        cvmfs_elements = stage_element.getElementsByTagName('cvmfs')
+        if cvmfs_elements:
+            self.cvmfs = int(cvmfs_elements[0].firstChild.data)
+
+	# Stash flag.
+
+        stash_elements = stage_element.getElementsByTagName('stash')
+        if stash_elements:
+            self.stash = int(stash_elements[0].firstChild.data)
+
+	# Singularity flag.
+
+        singularity_elements = stage_element.getElementsByTagName('singularity')
+        if singularity_elements:
+            self.singularity = int(singularity_elements[0].firstChild.data)
+
+	# Batch script
 
         script_elements = stage_element.getElementsByTagName('script')
         if script_elements:
@@ -1188,6 +1213,9 @@ class StageDef:
         result += 'Schema = %s\n' % self.schema
         result += 'Validate-on-worker = %d\n' % self.validate_on_worker
         result += 'Upload-on-worker = %d\n' % self.copy_to_fts
+        result += 'Cvmfs flag = %d\n' % self.cvmfs
+        result += 'Stash cache flag = %d\n' % self.stash
+        result += 'Singularity flag = %d\n' % self.singularity
         result += 'Batch script = %s\n' % self.script
         result += 'Start script = %s\n' % self.start_script
         result += 'Stop script = %s\n' % self.stop_script

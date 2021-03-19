@@ -81,6 +81,8 @@
 #
 # --dump_project - Dump project object (dumps all stages).
 # --dump_stage   - Dump stage object.
+# --dryrun       - When combined with --submit or --makeup, do prep and show submit command,
+#                  but don't submit jobs.
 # --nocheck    - Parse xml with reduced checks.  This is mainly useful when
 #                combined with one of the dump options.
 #
@@ -142,6 +144,19 @@
 # <ups>     - Override top level ups products (repeatable).
 # <os>      - Specify batch OS (comma-separated list: SL5,SL6).
 #             Default let jobsub decide.
+#
+#             If the singularity flag is false, this option is passed directly as 
+#             jobsub_submit option --OS.
+#
+#             If singularity flag is true, this option is used to specify the
+#             singularity image, passed via jobsub_submit --lines.
+#
+#             A singularity image can be specified as an absolute or relative path
+#             of the image file, or as an alias, such as sl6, sl7, el8.
+#             A singularity image alias can be upper or lower case.
+#             The alias selects an image file in
+#             directory /cvmfs/singularity.opensciencegrid.org/fermilab.
+#
 # <server>  - Jobsub server (expert option, jobsub_submit --jobsub-server=...).
 #             If "" (blank), "-" (hyphen), or missing, omit --jobsub-server
 #             option (use default server).
@@ -185,6 +200,11 @@
 #              
 # <check>    - Do on-node validation and sam declaration (0 or 1, default 0).
 # <copy>     - Copy validated root files to FTS (0 or 1, default 0).
+# <cvmfs>    - Cvmfs flag (0 or 1, default 1).  If nonzero, add option
+#              "--append_condor_requirements='(TARGET.HAS_CVMFS_<experiment>_opensciencegrid_org==true)'"
+# <stash>    - Stash cache flag (0 or 1, default 1).  If nonzero, add option
+#              "--append_condor_requirements='(TARGET.HAS_CVMFS_<experiment>_osgstorage_org==true)'"
+# <singularity> - Singularity flag (0 or 1, default 1).
 #
 # <stage name="stagename" base="basestage"> - Information about project stage.
 #             There can be multiple instances of this tag with different name
@@ -375,6 +395,11 @@
 # <stage><schema>  - Sam schema (default none).  Use "root" to stream using xrootd.
 # <stage><check>   - Do on-node validation and sam declaration (0 or 1, default 0).
 # <stage><copy>    - Copy validated root files to FTS (0 or 1, default 0).
+# <stage><cvmfs>   - Cvmfs flag (0 or 1, default 1).  If nonzero, add option
+#              "--append_condor_requirements='(TARGET.HAS_CVMFS_<experiment>_opensciencegrid_org==true)'"
+# <stage><stash>   - Stash cache flag (0 or 1, default 1).  If nonzero, add option
+#              "--append_condor_requirements='(TARGET.HAS_CVMFS_<experiment>_osgstorage_org==true)'"
+# <stage><singularity> - Singularity flag (0 or 1, default 1).
 #
 # Batch job substages.
 #
@@ -2454,7 +2479,7 @@ def docheck_tape(dim):
 # Return jobsubid.
 # Raise exception if jobsub_submit returns a nonzero status.
 
-def dojobsub(project, stage, makeup, recur):
+def dojobsub(project, stage, makeup, recur, dryrun):
 
     # Default return.
 
@@ -3132,6 +3157,12 @@ def dojobsub(project, stage, makeup, recur):
     if opt != '':
         for word in opt.split():
             command.append(word)
+    if stage.cvmfs != 0:
+        command.append('--append_condor_requirements=\'(TARGET.HAS_CVMFS_%s_opensciencegrid_org==true)\'' % project_utilities.get_experiment())
+    if stage.stash != 0:
+        command.append('--append_condor_requirements=\'(TARGET.HAS_CVMFS_%s_osgstorage_org==true)\'' % project_utilities.get_experiment())
+    if stage.singularity != 0:
+        command.append('--append_condor_requirements=\'(TARGET.HAS_SINGULARITY=?=true)\'')
 
     # Batch script.
 
@@ -3299,6 +3330,12 @@ def dojobsub(project, stage, makeup, recur):
         if opt != '':
             for word in opt.split():
                 start_command.append(word)
+        if stage.cvmfs != 0:
+            start_command.append('--append_condor_requirements=\'(TARGET.HAS_CVMFS_%s_opensciencegrid_org==true)\'' % project_utilities.get_experiment())
+        if stage.stash != 0:
+            start_command.append('--append_condor_requirements=\'(TARGET.HAS_CVMFS_%s_osgstorage_org==true)\'' % project_utilities.get_experiment())
+        if stage.singularity != 0:
+            start_command.append('--append_condor_requirements=\'(TARGET.HAS_SINGULARITY=?=true)\'')
 
         # Start project script.
 
@@ -3364,6 +3401,12 @@ def dojobsub(project, stage, makeup, recur):
         if opt != '':
             for word in opt.split():
                 stop_command.append(word)
+        if stage.cvmfs != 0:
+            stop_command.append('--append_condor_requirements=\'(TARGET.HAS_CVMFS_%s_opensciencegrid_org==true)\'' % project_utilities.get_experiment())
+        if stage.stash != 0:
+            stop_command.append('--append_condor_requirements=\'(TARGET.HAS_CVMFS_%s_osgstorage_org==true)\'' % project_utilities.get_experiment())
+        if stage.singularity != 0:
+            stop_command.append('--append_condor_requirements=\'(TARGET.HAS_SINGULARITY=?=true)\'')
 
         # Stop project script.
 
@@ -3491,41 +3534,12 @@ def dojobsub(project, stage, makeup, recur):
         # For submit action, invoke the job submission command.
 
         print('Invoke jobsub_submit')
-        q = queue.Queue()
-        jobinfo = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        thread = threading.Thread(target=project_utilities.wait_for_subprocess, args=[jobinfo, q])
-        thread.start()
-        thread.join(timeout=submit_timeout)
-        if thread.is_alive():
-            jobinfo.terminate()
-            thread.join()
-        rc = q.get()
-        jobout = convert_str(q.get())
-        joberr = convert_str(q.get())
-        if larbatch_posix.exists(checked_file):
-            larbatch_posix.remove(checked_file)
-        if larbatch_posix.isdir(tmpdir):
-            larbatch_posix.rmtree(tmpdir)
-        if larbatch_posix.isdir(tmpworkdir):
-            larbatch_posix.rmtree(tmpworkdir)
-        if rc != 0:
-            raise JobsubError(command, rc, jobout, joberr)
-        for line in jobout.split('\n'):
-            if "JobsubJobId" in line:
-                jobid = line.strip().split()[-1]
-        if not jobid:
-            raise JobsubError(command, rc, jobout, joberr)
-        print('jobsub_submit finished.')
-
-    else:
-
-        # For makeup action, abort if makeup job count is zero for some reason.
-
-        if makeup_count > 0:
-            q = queue.Queue()
+        if dryrun:
+            print(' '.join(command))
+        else:
+            q = Queue.Queue()
             jobinfo = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            thread = threading.Thread(target=project_utilities.wait_for_subprocess,
-                                      args=[jobinfo, q])
+            thread = threading.Thread(target=project_utilities.wait_for_subprocess, args=[jobinfo, q])
             thread.start()
             thread.join(timeout=submit_timeout)
             if thread.is_alive():
@@ -3547,6 +3561,41 @@ def dojobsub(project, stage, makeup, recur):
                     jobid = line.strip().split()[-1]
             if not jobid:
                 raise JobsubError(command, rc, jobout, joberr)
+        print('jobsub_submit finished.')
+
+    else:
+
+        # For makeup action, abort if makeup job count is zero for some reason.
+
+        if makeup_count > 0:
+            if dryrun:
+                print(' '.join(command))
+            else:
+                q = Queue.Queue()
+                jobinfo = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                thread = threading.Thread(target=project_utilities.wait_for_subprocess,
+                                          args=[jobinfo, q])
+                thread.start()
+                thread.join(timeout=submit_timeout)
+                if thread.is_alive():
+                    jobinfo.terminate()
+                    thread.join()
+                rc = q.get()
+                jobout = q.get()
+                joberr = q.get()
+                if larbatch_posix.exists(checked_file):
+                    larbatch_posix.remove(checked_file)
+                if larbatch_posix.isdir(tmpdir):
+                    larbatch_posix.rmtree(tmpdir)
+                if larbatch_posix.isdir(tmpworkdir):
+                    larbatch_posix.rmtree(tmpworkdir)
+                if rc != 0:
+                    raise JobsubError(command, rc, jobout, joberr)
+                for line in jobout.split('\n'):
+                    if "JobsubJobId" in line:
+                        jobid = line.strip().split()[-1]
+                if not jobid:
+                    raise JobsubError(command, rc, jobout, joberr)
         else:
             print('Makeup action aborted because makeup job count is zero.')
 
@@ -3557,7 +3606,7 @@ def dojobsub(project, stage, makeup, recur):
 
 # Submit/makeup action.
 
-def dosubmit(project, stage, makeup=False, recur=False):
+def dosubmit(project, stage, makeup=False, recur=False, dryrun=False):
 
     # Make sure we have a kerberos ticket.
 
@@ -3614,7 +3663,7 @@ def dosubmit(project, stage, makeup=False, recur=False):
 
     # Copy files to workdir and issue jobsub command to submit jobs.
 
-    jobid = dojobsub(project, stage, makeup, recur)
+    jobid = dojobsub(project, stage, makeup, recur, dryrun)
 
     # Append jobid to file "jobids.list" in the log directory.
 
@@ -3921,6 +3970,7 @@ def main(argv):
     clean_one = 0
     dump_project = 0
     dump_stage = 0
+    dryrun = 0
     nocheck = 0
     print_outdir = 0
     print_logdir = 0
@@ -4050,6 +4100,9 @@ def main(argv):
             del args[0]
         elif args[0] == '--dump_stage':
             dump_stage = 1
+            del args[0]
+        elif args[0] == '--dryrun':
+            dryrun = 1
             del args[0]
         elif args[0] == '--nocheck':
             nocheck = 1
@@ -4455,7 +4508,7 @@ def main(argv):
                 print('Skipping job submission because similar job submission process is running.')
             else:
                 stage = stages[stagename]
-                dosubmit(project, stage, makeup, stage.recur)
+                dosubmit(project, stage, makeup, stage.recur, dryrun)
 
     if check or checkana:
 

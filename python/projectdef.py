@@ -57,6 +57,9 @@ class ProjectDef:
         self.script = 'condor_lar.sh'     # Batch script.
         self.validate_on_worker = 0   # Run post-job validation on the worker node
         self.copy_to_fts = 0          # Copy a copy of the file to a dropbox scanned by fts. Note that a copy is still sent to <outdir>
+        self.cvmfs = 1                    # Cvmfs flag.
+        self.stash = 1                    # Stash cache flag.
+        self.singularity = 1              # Singularity flag.
         self.start_script = 'condor_start_project.sh'  # Sam start project script.
         self.stop_script = 'condor_stop_project.sh'    # Sam stop project script.
         self.force_dag = 0                # Force dag for sam input jobs.
@@ -302,6 +305,27 @@ class ProjectDef:
             if worker_copy.parentNode == project_element:
                 self.copy_to_fts = int(worker_copy.firstChild.data)    
 
+        # Cvmfs flag (subelement).
+	
+	cvmfs_elements = project_element.getElementsByTagName('cvmfs')
+        for cvmfs_element in cvmfs_elements:
+            if cvmfs_element.parentNode == project_element:
+                self.cvmfs = int(cvmfs_element.firstChild.data)    
+
+        # Stash flag (subelement).
+	
+	stash_elements = project_element.getElementsByTagName('stash')
+        for stash_element in stash_elements:
+            if stash_element.parentNode == project_element:
+                self.stash = int(stash_element.firstChild.data)    
+
+        # Singularity flag (subelement).
+	
+	singularity_elements = project_element.getElementsByTagName('singularity')
+        for singularity_element in singularity_elements:
+            if singularity_element.parentNode == project_element:
+                self.singularity = int(singularity_element.firstChild.data)    
+
         # Start project batch script (subelement).
         
         start_script_elements = project_element.getElementsByTagName('startscript')
@@ -407,6 +431,9 @@ class ProjectDef:
                                         self.memory,
                                         self.validate_on_worker,
                                         self.copy_to_fts,
+                                        self.cvmfs,
+                                        self.stash,
+                                        self.singularity,
                                         self.script,
                                         self.start_script,
                                         self.stop_script,
