@@ -3143,7 +3143,7 @@ def dojobsub(project, stage, makeup, recur, dryrun):
             if p != '':
                 command.append('--lines=\'+SingularityImage=\\"%s\\"\'' % p)
             else:
-                raise RuntimeError, 'No singularity image found for %s' % project.os
+                raise RuntimeError('No singularity image found for %s' % project.os)
     if not stage.pubs_output:
         if not makeup:
             command_njobs = stage.num_jobs
@@ -3336,7 +3336,7 @@ def dojobsub(project, stage, makeup, recur, dryrun):
                 if p != '':
                     start_command.append('--lines=\'+SingularityImage=\\"%s\\"\'' % p)
                 else:
-                    raise RuntimeError, 'No singularity image found for %s' % project.os
+                    raise RuntimeError('No singularity image found for %s' % project.os)
         if stage.jobsub_start != '':
             for word in stage.jobsub_start.split():
                 start_command.append(word)
@@ -3414,7 +3414,7 @@ def dojobsub(project, stage, makeup, recur, dryrun):
                 if p != '':
                     stop_command.append('--lines=\'+SingularityImage=\\"%s\\"\'' % p)
                 else:
-                    raise RuntimeError, 'No singularity image found for %s' % project.os
+                    raise RuntimeError('No singularity image found for %s' % project.os)
         if stage.jobsub_start != '':
             for word in stage.jobsub_start.split():
                 stop_command.append(word)
@@ -3602,8 +3602,8 @@ def dojobsub(project, stage, makeup, recur, dryrun):
                     jobinfo.terminate()
                     thread.join()
                 rc = q.get()
-                jobout = q.get()
-                joberr = q.get()
+                jobout = convert_str(q.get())
+                joberr = convert_str(q.get())
                 if larbatch_posix.exists(checked_file):
                     larbatch_posix.remove(checked_file)
                 if larbatch_posix.isdir(tmpdir):
