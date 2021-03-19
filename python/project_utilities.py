@@ -587,7 +587,7 @@ def addLayerTwo(path, recreate=True):
 # all batch submissions.
 
 def default_jobsub_submit_options():
-    opt = '--append_condor_requirements=\'(TARGET.HAS_CVMFS_%s_opensciencegrid_org==true)\'' % get_experiment()
+    opt = ''
     return opt
 
 # Check the health status of the batch system and any other resources that 
