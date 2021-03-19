@@ -3112,7 +3112,14 @@ def dojobsub(project, stage, makeup, recur, dryrun):
     if stage.memory != 0:
         command.append('--memory=%d' % stage.memory)
     if project.os != '':
-        command.append('--OS=%s' % project.os)
+        if stage.singularity == 0:
+            command.append('--OS=%s' % project.os)
+        else:
+            p = project_utilities.get_singularity(project.os)
+            if p != '':
+                command.append('--lines=\'+SingularityImage=\\"%s\\"\'' % p)
+            else:
+                raise RuntimeError, 'No singularity image found for %s' % project.os
     if not stage.pubs_output:
         if not makeup:
             command_njobs = stage.num_jobs
@@ -3298,7 +3305,14 @@ def dojobsub(project, stage, makeup, recur, dryrun):
         if stage.blacklist != '':
             start_command.append('--blacklist=%s' % stage.blacklist)
         if project.os != '':
-            start_command.append('--OS=%s' % project.os)
+            if stage.singularity == 0:
+                start_command.append('--OS=%s' % project.os)
+            else:
+                p = project_utilities.get_singularity(project.os)
+                if p != '':
+                    start_command.append('--lines=\'+SingularityImage=\\"%s\\"\'' % p)
+                else:
+                    raise RuntimeError, 'No singularity image found for %s' % project.os
         if stage.jobsub_start != '':
             for word in stage.jobsub_start.split():
                 start_command.append(word)
@@ -3369,7 +3383,14 @@ def dojobsub(project, stage, makeup, recur, dryrun):
         if stage.blacklist != '':
             stop_command.append('--blacklist=%s' % stage.blacklist)
         if project.os != '':
-            stop_command.append('--OS=%s' % project.os)
+            if stage.singularity == 0:
+                stop_command.append('--OS=%s' % project.os)
+            else:
+                p = project_utilities.get_singularity(project.os)
+                if p != '':
+                    stop_command.append('--lines=\'+SingularityImage=\\"%s\\"\'' % p)
+                else:
+                    raise RuntimeError, 'No singularity image found for %s' % project.os
         if stage.jobsub_start != '':
             for word in stage.jobsub_start.split():
                 stop_command.append(word)
