@@ -3558,7 +3558,7 @@ def dojobsub(project, stage, makeup, recur, dryrun):
         if dryrun:
             print(' '.join(command))
         else:
-            q = Queue.Queue()
+            q = queue.Queue()
             jobinfo = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             thread = threading.Thread(target=project_utilities.wait_for_subprocess, args=[jobinfo, q])
             thread.start()
@@ -3592,7 +3592,7 @@ def dojobsub(project, stage, makeup, recur, dryrun):
             if dryrun:
                 print(' '.join(command))
             else:
-                q = Queue.Queue()
+                q = queue.Queue()
                 jobinfo = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 thread = threading.Thread(target=project_utilities.wait_for_subprocess,
                                           args=[jobinfo, q])

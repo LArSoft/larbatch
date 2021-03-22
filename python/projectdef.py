@@ -306,22 +306,22 @@ class ProjectDef:
                 self.copy_to_fts = int(worker_copy.firstChild.data)    
 
         # Cvmfs flag (subelement).
-	
-	cvmfs_elements = project_element.getElementsByTagName('cvmfs')
+
+        cvmfs_elements = project_element.getElementsByTagName('cvmfs')
         for cvmfs_element in cvmfs_elements:
             if cvmfs_element.parentNode == project_element:
                 self.cvmfs = int(cvmfs_element.firstChild.data)    
 
         # Stash flag (subelement).
-	
-	stash_elements = project_element.getElementsByTagName('stash')
+
+        stash_elements = project_element.getElementsByTagName('stash')
         for stash_element in stash_elements:
             if stash_element.parentNode == project_element:
                 self.stash = int(stash_element.firstChild.data)    
 
         # Singularity flag (subelement).
-	
-	singularity_elements = project_element.getElementsByTagName('singularity')
+
+        singularity_elements = project_element.getElementsByTagName('singularity')
         for singularity_element in singularity_elements:
             if singularity_element.parentNode == project_element:
                 self.singularity = int(singularity_element.firstChild.data)    
