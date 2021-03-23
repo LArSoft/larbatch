@@ -596,7 +596,7 @@ def addLayerTwo(path, recreate=True):
 # all batch submissions.
 
 def default_jobsub_submit_options():
-    opt = '--append_condor_requirements=\'(TARGET.HAS_CVMFS_%s_opensciencegrid_org==true)\'' % get_experiment()
+    opt = ''
     return opt
 
 # Check the health status of the batch system and any other resources that 
@@ -922,3 +922,33 @@ def makeFileListDefinition(list_or_dim):
     # Done.
 
     return defname
+
+# Get full path of specified singularity container image file.
+# The argument can be an absolute or relative path of the image file,
+# or the argument can be an alias, such as 'sl7'.
+# Alias arguments are used to find standard Fermilab singularity images.
+# If no image file can be found, return the empty string.
+
+def get_singularity(name):
+
+    result = ''
+    dir = '/cvmfs/singularity.opensciencegrid.org/fermilab'
+    lcname = name.lower()
+
+    # See if the argument makes sense as a path.
+
+    if os.path.exists(os.path.abspath(name)):
+        result = os.path.abspath(name)
+
+    # Otherwise, try to interpret the argument as an alias.
+
+    elif os.path.exists('%s/%s' % (dir, lcname)):
+        result = '%s/%s' % (dir, lcname)
+    elif os.path.exists('%s/fnal-wn-%s' % (dir, lcname)):
+        result = '%s/fnal-wn-%s' % (dir, lcname)
+    elif os.path.exists('%s/fnal-wn-%s:latest' % (dir, lcname)):
+        result = '%s/fnal-wn-%s:latest' % (dir, lcname)
+
+    # Done.
+
+    return result
