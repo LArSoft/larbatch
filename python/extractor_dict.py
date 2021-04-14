@@ -131,6 +131,12 @@ class expMetaData(MetaData):
             # Instead, get run_type from runs field.
             if mdkey in ['file_format_version', 'file_format_era', 'run_type']:
                 pass
+            elif mdkey in ['art.file_format_version', 'art.file_format_era', 'art.run_type']:
+                pass
+
+            # Ignore new-style first/last event (old-style first/last handled below).
+            elif mdkey in ['art.first_event', 'art.last_event']:
+                pass
 
             # Ignore data_stream if it begins with "out".
             # These kinds of stream names are probably junk module labels.
@@ -146,11 +152,11 @@ class expMetaData(MetaData):
                 pass
 	    
             # Application family/name/version.
-            elif mdkey == 'applicationFamily':
+            elif mdkey == 'applicationFamily' or mdkey == 'application.family':
                 md['application'], md['application']['family'] = self.md_handle_application(md), mdval
-            elif mdkey == 'process_name':
+            elif mdkey == 'process_name' or mdkey == 'art.process_name':
                 md['application'], md['application']['name'] = self.md_handle_application(md), mdval
-            elif mdkey == 'applicationVersion':
+            elif mdkey == 'applicationVersion' or mdkey == 'application.version':
                 md['application'], md['application']['version'] = self.md_handle_application(md), mdval
 
             # Parents.
@@ -162,7 +168,10 @@ class expMetaData(MetaData):
 		
             # Other fields where the key or value requires minor conversion.
             elif mdkey in ['first_event', 'last_event']:
-                md[mdkey] = mdval[2]
+                if (type(mdval) == type([]) or type(mdval) == type(())) and len(mdval) >= 3:
+                    md[mdkey] = mdval[2]
+                else:
+                    md[mdkey] = mdval
             elif mdkey in self.metadataList:
                 #print mdkey
                 trkey = self.translateKey(mdkey)
