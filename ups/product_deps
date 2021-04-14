@@ -2,7 +2,7 @@
 
 # The *parent* line must the first non-commented line and defines this product and version
 # The version should be of the form vxx_yy_zz (e.g. v01_02_03)
-parent larbatch v01_55_01 current
+parent larbatch v01_51_15
 
 # The no_fq_dir keyword indicates that this product is NULL flavored
 no_fq_dir
@@ -25,17 +25,15 @@ table_fragment_end
 
 product          version
 sam_web_client	-		-       optional
-#jobsub_client	-		-       optional
+jobsub_client	-		-       optional
 
 cetbuildtools	v7_13_02	-	only_for_build
 end_product_list
 
 # We now define allowed qualifiers and the corresponding qualifiers for the depdencies.
 # Make a table by adding columns before "notes". 
-#qualifier      sam_web_client   jobsub_client  notes
-#-nq-           -nq-             -nq-           the null qualifier matrix
-qualifier      sam_web_client   notes
--nq-           -nq-             the null qualifier matrix
+qualifier      sam_web_client   jobsub_client  notes
+-nq-           -nq-             -nq-           the null qualifier matrix
 end_qualifier_list
 
 # Preserve tabs and formatting in emacs and vi / vim:
