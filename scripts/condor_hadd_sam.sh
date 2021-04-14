@@ -1046,12 +1046,12 @@ for root in *.root; do
   if [ -f $root ]; then
     json=${root}.json
     if [ -f $json ]; then
-      ./root_metadata.py $root > ${json}2
+      ./root_metadata.py --output="${json}2" $root >& /dev/null
       ./merge_json.py $json ${json}2 > ${json}3
       mv -f ${json}3 $json
       rm ${json}2
     else
-      root_metadata.py $root > $json
+      ./root_metadata.py --output="$json" $root >& /dev/null
     fi
   fi
 done

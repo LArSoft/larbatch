@@ -10,11 +10,16 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 
 # Import GUI stuff
 
-import Tkinter as tk
+try:
+    import tkinter as tk
+except ImportError:
+    import Tkinter as tk
 
 # Project widget class
 
@@ -56,10 +61,10 @@ class TextWindow(tk.Frame):
 
         self.check_scroll()
  
-	# Set event bindings (check scrollbar visibility when window size 
+        # Set event bindings (check scrollbar visibility when window size 
         # changes).
 
-	self.text.bind('<Configure>', self.check_scroll)
+        self.text.bind('<Configure>', self.check_scroll)
 
     # See if we need to enable or disable either scrollbar.
 
@@ -67,23 +72,23 @@ class TextWindow(tk.Frame):
 
         # Check vertical scroll bar.
 
-	yv = self.text.yview()
-	if not self.vbar_visible and (yv[0] != 0.0 or yv[1] != 1.0):
-	    self.vbar_visible = 1
-	    self.vbar.grid(row=0, column=1, sticky=tk.N+tk.S)
-	elif self.vbar_visible and yv[0] == 0.0 and yv[1] == 1.0:
-	    self.vbar_visible = 0
-	    self.vbar.grid_forget()
+        yv = self.text.yview()
+        if not self.vbar_visible and (yv[0] != 0.0 or yv[1] != 1.0):
+            self.vbar_visible = 1
+            self.vbar.grid(row=0, column=1, sticky=tk.N+tk.S)
+        elif self.vbar_visible and yv[0] == 0.0 and yv[1] == 1.0:
+            self.vbar_visible = 0
+            self.vbar.grid_forget()
 
         # Check horizontal scroll bar.
 
-	xv = self.text.xview()
-	if not self.hbar_visible and (xv[0] != 0.0 or xv[1] != 1.0):
-	    self.hbar_visible = 1
-	    self.hbar.grid(row=1, column=0, sticky=tk.E+tk.W)
-	elif self.hbar_visible and xv[0] == 0.0 and xv[1] == 1.0:
-	    self.hbar_visible = 0
-	    self.hbar.grid_forget()
+        xv = self.text.xview()
+        if not self.hbar_visible and (xv[0] != 0.0 or xv[1] != 1.0):
+            self.hbar_visible = 1
+            self.hbar.grid(row=1, column=0, sticky=tk.E+tk.W)
+        elif self.hbar_visible and xv[0] == 0.0 and xv[1] == 1.0:
+            self.hbar_visible = 0
+            self.hbar.grid_forget()
 
     # Insert text.
 
@@ -120,18 +125,18 @@ class TextWindow(tk.Frame):
 
     # Read methods (raise IOError).
 
-    def next(self):
-        raise IOError, 'File is not open for reading.'
+    def __next__(self):
+        raise IOError('File is not open for reading.')
     def read(self, size=0):
-        raise IOError, 'File is not open for reading.'
+        raise IOError('File is not open for reading.')
     def readline(self, size=0):
-        raise IOError, 'File is not open for reading.'
+        raise IOError('File is not open for reading.')
     def readlines(self, size=0):
-        raise IOError, 'File is not open for reading.'
+        raise IOError('File is not open for reading.')
     def readline(self, size=0):
-        raise IOError, 'File is not open for reading.'
+        raise IOError('File is not open for reading.')
     def seek(self, offset, pos=0):
-        raise IOError, 'File is not open for reading.'
+        raise IOError('File is not open for reading.')
 
     # Current position.
 

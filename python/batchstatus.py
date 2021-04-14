@@ -11,10 +11,13 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import project_utilities
 import subprocess
 from project_modules.jobsuberror import JobsubError
+from larbatch_utilities import convert_str
 
 # Cache jobs list independent of project.
 
@@ -103,6 +106,8 @@ class BatchStatus:
         command.append('--role=%s' % project_utilities.get_role())
         jobinfo = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         jobout, joberr = jobinfo.communicate()
+        jobout = convert_str(jobout)
+        joberr = convert_str(joberr)
         rc = jobinfo.poll()
         if rc != 0:
             #raise JobsubError(command, rc, jobout, joberr)

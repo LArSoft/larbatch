@@ -29,6 +29,9 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 # Imports
 
 import sys, os, ifdh
@@ -62,11 +65,11 @@ def main(argv):
             verbose = 1
             del args[0]
         elif args[0][0] == '-':
-            print 'Unknown option %s' % args[0]
+            print('Unknown option %s' % args[0])
             return 1
         else:
             if dir != '':
-                print 'Too many arguments.'
+                print('Too many arguments.')
                 return 1
             dir = args[0]
             del args[0]
@@ -91,9 +94,9 @@ def help():
             doprint = 0
         if doprint:
             if len(line) > 2:
-                print line[2:],
+                print(line[2:], end=' ')
             else:
-                print
+                print()
 
 
 # This function deletes the contents of a directory, but not the directory itself.
@@ -112,7 +115,7 @@ def emptydir(dir, verbose):
         files = Ifdh.ls(dir, 1)
     except:
         files = []
-        print 'Caught exception from Ifdh.ls for directory %s.' % dir
+        print('Caught exception from Ifdh.ls for directory %s.' % dir)
 
     # First pass: delete files.
 
@@ -122,11 +125,11 @@ def emptydir(dir, verbose):
 
         if file[-1] != '/':
             if verbose:
-                print 'Deleting %s' % file
+                print('Deleting %s' % file)
             try:
                 Ifdh.rm(file)
             except:
-                print 'Caught exception from Ifdh.rm for file %s.' % file
+                print('Caught exception from Ifdh.rm for file %s.' % file)
                 
 
     # Second pass: delete subdirectories.
@@ -161,11 +164,11 @@ def rmdir(dir, verbose):
 
     emptydir(dir, verbose)
     if verbose:
-        print 'Deleting directory %s' % dir
+        print('Deleting directory %s' % dir)
     try:
         Ifdh.rmdir(dir)
     except:
-        print 'Caught exception from Ifdh.rmdir for directory %s.' % dir
+        print('Caught exception from Ifdh.rmdir for directory %s.' % dir)
 
 
 # Command line.

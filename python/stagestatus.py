@@ -10,7 +10,9 @@
 #
 ######################################################################
 
-import os, string
+from __future__ import absolute_import
+from __future__ import print_function
+import os
 import project_utilities
 import larbatch_posix
 
@@ -61,7 +63,7 @@ class StageStatus:
             if larbatch_posix.exists(eventsfile):
                 lines = larbatch_posix.readlines(eventsfile)
                 for line in lines:
-                    words = string.split(line)
+                    words = line.split()
                     if len(words) >= 2:
                         self.nfile = self.nfile + 1
                         self.nev = self.nev + int(words[1])

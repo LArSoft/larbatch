@@ -60,15 +60,23 @@
 # nfs_server - Node name of a computer in which /pnfs filesystem is nfs-mounted.
 # parse_mode - Parse the ten-character file mode string ("ls -l").
 # check_running - Check for running project.py submission process.
+# convert_str - Accepting unicode or bytes as input, convert to default python str.
+# convert_bytes - Accepting unicode or bytes as input, convert to bytes.
+# test_jobsub - Test whether jobsub_client is set up.
 #
 ######################################################################
 
-import os
+from __future__ import absolute_import
+from __future__ import print_function
+import sys, os
 import stat
 import subprocess
 import getpass
 import threading
-import Queue
+try:
+    import queue
+except ImportError:
+    import Queue as queue
 from project_modules.ifdherror import IFDHError
 
 # Global variables.
@@ -77,6 +85,7 @@ ticket_ok = False
 kca_ok = False
 proxy_ok = False
 kca_user = ''
+jobsub_ok = False
 
 # Copy file using ifdh, with timeout.
 
@@ -91,7 +100,7 @@ def ifdh_cp(source, destination):
 
     save_vars = {}
     for var in ('X509_USER_CERT', 'X509_USER_KEY'):
-        if os.environ.has_key(var):
+        if var in os.environ:
             save_vars[var] = os.environ[var]
             del os.environ[var]
 
@@ -100,25 +109,25 @@ def ifdh_cp(source, destination):
     cmd = ['ifdh', 'cp', source, destination]
     jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    q = Queue.Queue()
+    q = queue.Queue()
     thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
     thread.start()
     thread.join(timeout=31000000)
     if thread.is_alive():
-        print 'Terminating subprocess.'
+        print('Terminating subprocess.')
         jobinfo.terminate()
         thread.join()
     rc = q.get()
-    jobout = q.get()
-    joberr = q.get()
+    jobout = convert_str(q.get())
+    joberr = convert_str(q.get())
     if rc != 0:
-        for var in save_vars.keys():
+        for var in list(save_vars.keys()):
             os.environ[var] = save_vars[var]
         raise IFDHError(cmd, rc, jobout, joberr)
 
     # Restore environment variables.
 
-    for var in save_vars.keys():
+    for var in list(save_vars.keys()):
         os.environ[var] = save_vars[var]
 
 
@@ -136,7 +145,7 @@ def ifdh_ls(path, depth):
 
     save_vars = {}
     for var in ('X509_USER_CERT', 'X509_USER_KEY'):
-        if os.environ.has_key(var):
+        if var in os.environ:
             save_vars[var] = os.environ[var]
             del os.environ[var]
 
@@ -145,25 +154,25 @@ def ifdh_ls(path, depth):
     cmd = ['ifdh', 'ls', path, '%d' % depth]
     jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    q = Queue.Queue()
+    q = queue.Queue()
     thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
     thread.start()
     thread.join(timeout=600)
     if thread.is_alive():
-        print 'Terminating subprocess.'
+        print('Terminating subprocess.')
         jobinfo.terminate()
         thread.join()
     rc = q.get()
-    jobout = q.get()
-    joberr = q.get()
+    jobout = convert_str(q.get())
+    joberr = convert_str(q.get())
     if rc != 0:
-        for var in save_vars.keys():
+        for var in list(save_vars.keys()):
             os.environ[var] = save_vars[var]
         raise IFDHError(cmd, rc, jobout, joberr)
 
     # Restore environment variables.
 
-    for var in save_vars.keys():
+    for var in list(save_vars.keys()):
         os.environ[var] = save_vars[var]
 
     # Done.
@@ -185,7 +194,7 @@ def ifdh_ll(path, depth):
 
     save_vars = {}
     for var in ('X509_USER_CERT', 'X509_USER_KEY'):
-        if os.environ.has_key(var):
+        if var in os.environ:
             save_vars[var] = os.environ[var]
             del os.environ[var]
 
@@ -194,25 +203,25 @@ def ifdh_ll(path, depth):
     cmd = ['ifdh', 'll', path, '%d' % depth]
     jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    q = Queue.Queue()
+    q = queue.Queue()
     thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
     thread.start()
     thread.join(timeout=60)
     if thread.is_alive():
-        print 'Terminating subprocess.'
+        print('Terminating subprocess.')
         jobinfo.terminate()
         thread.join()
     rc = q.get()
-    jobout = q.get()
-    joberr = q.get()
+    jobout = convert_str(q.get())
+    joberr = convert_str(q.get())
     if rc != 0:
-        for var in save_vars.keys():
+        for var in list(save_vars.keys()):
             os.environ[var] = save_vars[var]
         raise IFDHError(cmd, rc, jobout, joberr)
 
     # Restore environment variables.
 
-    for var in save_vars.keys():
+    for var in list(save_vars.keys()):
         os.environ[var] = save_vars[var]
 
     # Done.
@@ -233,7 +242,7 @@ def ifdh_mkdir(path):
 
     save_vars = {}
     for var in ('X509_USER_CERT', 'X509_USER_KEY'):
-        if os.environ.has_key(var):
+        if var in os.environ:
             save_vars[var] = os.environ[var]
             del os.environ[var]
 
@@ -242,25 +251,25 @@ def ifdh_mkdir(path):
     cmd = ['ifdh', 'mkdir', path]
     jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    q = Queue.Queue()
+    q = queue.Queue()
     thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
     thread.start()
     thread.join(timeout=60)
     if thread.is_alive():
-        print 'Terminating subprocess.'
+        print('Terminating subprocess.')
         jobinfo.terminate()
         thread.join()
     rc = q.get()
-    jobout = q.get()
-    joberr = q.get()
+    jobout = convert_str(q.get())
+    joberr = convert_str(q.get())
     if rc != 0:
-        for var in save_vars.keys():
+        for var in list(save_vars.keys()):
             os.environ[var] = save_vars[var]
         raise IFDHError(cmd, rc, jobout, joberr)
 
     # Restore environment variables.
 
-    for var in save_vars.keys():
+    for var in list(save_vars.keys()):
         os.environ[var] = save_vars[var]
 
     # Done.
@@ -281,7 +290,7 @@ def ifdh_rmdir(path):
 
     save_vars = {}
     for var in ('X509_USER_CERT', 'X509_USER_KEY'):
-        if os.environ.has_key(var):
+        if var in os.environ:
             save_vars[var] = os.environ[var]
             del os.environ[var]
 
@@ -290,25 +299,25 @@ def ifdh_rmdir(path):
     cmd = ['ifdh', 'rmdir', path]
     jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    q = Queue.Queue()
+    q = queue.Queue()
     thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
     thread.start()
     thread.join(timeout=60)
     if thread.is_alive():
-        print 'Terminating subprocess.'
+        print('Terminating subprocess.')
         jobinfo.terminate()
         thread.join()
     rc = q.get()
-    jobout = q.get()
-    joberr = q.get()
+    jobout = convert_str(q.get())
+    joberr = convert_str(q.get())
     if rc != 0:
-        for var in save_vars.keys():
+        for var in list(save_vars.keys()):
             os.environ[var] = save_vars[var]
         raise IFDHError(cmd, rc, jobout, joberr)
 
     # Restore environment variables.
 
-    for var in save_vars.keys():
+    for var in list(save_vars.keys()):
         os.environ[var] = save_vars[var]
 
     # Done.
@@ -329,7 +338,7 @@ def ifdh_chmod(path, mode):
 
     save_vars = {}
     for var in ('X509_USER_CERT', 'X509_USER_KEY'):
-        if os.environ.has_key(var):
+        if var in os.environ:
             save_vars[var] = os.environ[var]
             del os.environ[var]
 
@@ -338,25 +347,25 @@ def ifdh_chmod(path, mode):
     cmd = ['ifdh', 'chmod', '%o' % mode, path]
     jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    q = Queue.Queue()
+    q = queue.Queue()
     thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
     thread.start()
     thread.join(timeout=60)
     if thread.is_alive():
-        print 'Terminating subprocess.'
+        print('Terminating subprocess.')
         jobinfo.terminate()
         thread.join()
     rc = q.get()
-    jobout = q.get()
-    joberr = q.get()
+    jobout = convert_str(q.get())
+    joberr = convert_str(q.get())
     if rc != 0:
-        for var in save_vars.keys():
+        for var in list(save_vars.keys()):
             os.environ[var] = save_vars[var]
         raise IFDHError(cmd, rc, jobout, joberr)
 
     # Restore environment variables.
 
-    for var in save_vars.keys():
+    for var in list(save_vars.keys()):
         os.environ[var] = save_vars[var]
 
     # Done.
@@ -377,7 +386,7 @@ def ifdh_mv(src, dest):
 
     save_vars = {}
     for var in ('X509_USER_CERT', 'X509_USER_KEY'):
-        if os.environ.has_key(var):
+        if var in os.environ:
             save_vars[var] = os.environ[var]
             del os.environ[var]
 
@@ -386,25 +395,25 @@ def ifdh_mv(src, dest):
     cmd = ['ifdh', 'mv', src, dest]
     jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    q = Queue.Queue()
+    q = queue.Queue()
     thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
     thread.start()
     thread.join(timeout=60)
     if thread.is_alive():
-        print 'Terminating subprocess.'
+        print('Terminating subprocess.')
         jobinfo.terminate()
         thread.join()
     rc = q.get()
-    jobout = q.get()
-    joberr = q.get()
+    jobout = convert_str(q.get())
+    joberr = convert_str(q.get())
     if rc != 0:
-        for var in save_vars.keys():
+        for var in list(save_vars.keys()):
             os.environ[var] = save_vars[var]
         raise IFDHError(cmd, rc, jobout, joberr)
 
     # Restore environment variables.
 
-    for var in save_vars.keys():
+    for var in list(save_vars.keys()):
         os.environ[var] = save_vars[var]
 
     # Done.
@@ -425,7 +434,7 @@ def ifdh_rm(path):
 
     save_vars = {}
     for var in ('X509_USER_CERT', 'X509_USER_KEY'):
-        if os.environ.has_key(var):
+        if var in os.environ:
             save_vars[var] = os.environ[var]
             del os.environ[var]
 
@@ -434,25 +443,25 @@ def ifdh_rm(path):
     cmd = ['ifdh', 'rm', path]
     jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    q = Queue.Queue()
+    q = queue.Queue()
     thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
     thread.start()
     thread.join(timeout=60)
     if thread.is_alive():
-        print 'Terminating subprocess.'
+        print('Terminating subprocess.')
         jobinfo.terminate()
         thread.join()
     rc = q.get()
-    jobout = q.get()
-    joberr = q.get()
+    jobout = convert_str(q.get())
+    joberr = convert_str(q.get())
     if rc != 0:
-        for var in save_vars.keys():
+        for var in list(save_vars.keys()):
             os.environ[var] = save_vars[var]
         raise IFDHError(cmd, rc, jobout, joberr)
 
     # Restore environment variables.
 
-    for var in save_vars.keys():
+    for var in list(save_vars.keys()):
         os.environ[var] = save_vars[var]
 
     # Done.
@@ -476,7 +485,7 @@ def posix_cp(source, destination):
 
         jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        q = Queue.Queue()
+        q = queue.Queue()
         thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
         thread.start()
         thread.join(timeout=600)
@@ -486,7 +495,7 @@ def posix_cp(source, destination):
             # Try to kill the subprocess and exit process.
             # Unkillable process will become detached.
 
-            print 'Terminating subprocess.'
+            print('Terminating subprocess.')
             jobinfo.kill()
             os._exit(1)
 
@@ -495,8 +504,8 @@ def posix_cp(source, destination):
             # Subprocess finished normally.
 
             rc = q.get()
-            jobout = q.get()
-            joberr = q.get()
+            jobout = convert_str(q.get())
+            joberr = convert_str(q.get())
             os._exit(rc)
 
     else:
@@ -542,7 +551,7 @@ def test_ticket():
     if not ticket_ok:
         ok = subprocess.call(['klist', '-s'], stdout=-1, stderr=-1)
         if ok != 0:
-            raise RuntimeError, 'Please get a kerberos ticket.'
+            raise RuntimeError('Please get a kerberos ticket.')
         ticket_ok = True
     return ticket_ok
 
@@ -589,7 +598,7 @@ def get_proxy():
 
     # Get proxy using either specified cert+key or default cert.
 
-    if os.environ.has_key('X509_USER_CERT') and os.environ.has_key('X509_USER_KEY'):
+    if 'X509_USER_CERT' in os.environ and 'X509_USER_KEY' in os.environ:
         cmd=['voms-proxy-init',
              '-rfc',
              '-cert', os.environ['X509_USER_CERT'],
@@ -624,11 +633,11 @@ def test_kca():
     global kca_ok
     if not kca_ok:
         try:
-            if os.environ.has_key('X509_USER_PROXY'):
+            if 'X509_USER_PROXY' in os.environ:
                 subprocess.check_call(['voms-proxy-info',
                                        '-file', os.environ['X509_USER_PROXY'],
                                        '-exists'], stdout=-1, stderr=-1)
-            elif os.environ.has_key('X509_USER_CERT') and os.environ.has_key('X509_USER_KEY'):
+            elif 'X509_USER_CERT' in os.environ and 'X509_USER_KEY' in os.environ:
                 subprocess.check_call(['voms-proxy-info',
                                        '-file', os.environ['X509_USER_CERT'],
                                        '-exists'], stdout=-1, stderr=-1)
@@ -638,7 +647,7 @@ def test_kca():
                 # Workaround jobsub bug by setting environment variable X509_USER_PROXY to
                 # point to the default location of the kca certificate.
 
-                x509_path = subprocess.check_output(['voms-proxy-info', '-path'], stderr=-1)
+                x509_path = convert_str(subprocess.check_output(['voms-proxy-info', '-path'], stderr=-1))
                 os.environ['X509_USER_PROXY'] = x509_path.strip()
 
             kca_ok = True
@@ -654,11 +663,11 @@ def test_kca():
 
     if not kca_ok:
         try:
-            if os.environ.has_key('X509_USER_PROXY'):
+            if 'X509_USER_PROXY' in os.environ:
                 subprocess.check_call(['voms-proxy-info',
                                        '-file', os.environ['X509_USER_PROXY'],
                                        '-exists'], stdout=-1, stderr=-1)
-            elif os.environ.has_key('X509_USER_CERT') and os.environ.has_key('X509_USER_KEY'):
+            elif 'X509_USER_CERT' in os.environ and 'X509_USER_KEY' in os.environ:
                 subprocess.check_call(['voms-proxy-info',
                                        '-file', os.environ['X509_USER_CERT'],
                                        '-exists'], stdout=-1, stderr=-1)
@@ -666,7 +675,7 @@ def test_kca():
                 subprocess.check_call(['voms-proxy-info', '-exists'], stdout=-1, stderr=-1)
             kca_ok = True
         except:
-            raise RuntimeError, 'Please get a kca certificate.'
+            raise RuntimeError('Please get a kca certificate.')
     return kca_ok
 
 
@@ -695,8 +704,35 @@ def test_proxy():
             subprocess.check_call(['voms-proxy-info', '-exists', '-acissuer'], stdout=-1, stderr=-1)
             proxy_ok = True
         except:
-            raise RuntimeError, 'Please get a grid proxy.'
+            raise RuntimeError('Please get a grid proxy.')
     return proxy_ok
+
+# Test whether jobsub_client has been set up.
+
+def test_jobsub():
+    global jobsub_ok
+    if not jobsub_ok:
+
+        # Look for command jobsub_submit on execution path.
+
+        try:
+            jobinfo = subprocess.Popen(['which', 'jobsub_submit'],
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            jobout, joberr = jobinfo.communicate()
+            jobout = convert_str(jobout)
+            joberr = convert_str(joberr)
+            jobsub_path = jobout.splitlines()[0].strip()
+            if jobsub_path != '':
+                jobsub_ok = True
+        except:
+            pass
+
+    if not jobsub_ok:
+        print('Please set up jobsub_client')
+        sys.exit(1)
+
+    return jobsub_ok
 
 # Return dCache server.
 
@@ -748,7 +784,7 @@ def srm_uri(path):
         return path
 
 
-# Return the name of a computer with login access that has the /pnfs 
+# Return the name of a computer with login access that has the /pnfs
 # filesystem nfs-mounted.  This function makes use of the $EXPERIMENT
 # environment variable (as does ifdh), which must be set.
 
@@ -756,7 +792,7 @@ def nfs_server():
     return '%sgpvm01.fnal.gov' % os.environ['EXPERIMENT']
 
 
-# Parse the ten-character file mode string as returned by "ls -l" 
+# Parse the ten-character file mode string as returned by "ls -l"
 # and return mode bit masek.
 
 def parse_mode(mode_str):
@@ -811,7 +847,7 @@ def parse_mode(mode_str):
         mode += stat.S_ISGID
 
     # World triad (includes sticky bit).
-                    
+
     if mode_str[7] == 'r':
         mode += stat.S_IROTH
     if mode_str[8] == 'w':
@@ -843,7 +879,7 @@ def get_experiment():
 
     exp = ''
     for ev in ('EXPERIMENT', 'SAM_EXPERIMENT'):
-        if os.environ.has_key(ev):
+        if ev in os.environ:
             exp = os.environ[ev]
             break
 
@@ -854,7 +890,7 @@ def get_experiment():
             exp = hostname[:n]
 
     if not exp:
-        raise RuntimeError, 'Unable to determine experiment.'
+        raise RuntimeError('Unable to determine experiment.')
 
     return exp
 
@@ -870,7 +906,7 @@ def get_role():
 
     # Check environment variable $ROLE.
 
-    if os.environ.has_key('ROLE'):
+    if 'ROLE' in os.environ:
         result = os.environ['ROLE']
 
     # Otherwise, check user.
@@ -895,14 +931,14 @@ def get_ups_products():
 # This function should be overridden in <experiment>_utilities.py.
 
 def get_setup_script_path():
-    raise RuntimeError, 'Function get_setup_script_path not implemented.'
+    raise RuntimeError('Function get_setup_script_path not implemented.')
 
 
 # Function to return dimension string for project, stage.
 # This function should be overridden in experiment_utilities.py
 
 def dimensions(project, stage, ana=False):
-    raise RuntimeError, 'Function dimensions not implemented.'
+    raise RuntimeError('Function dimensions not implemented.')
 
 
 # Function to return dimension string for project, stage, including data stream.
@@ -954,10 +990,10 @@ def get_dcache_server():
 # This function should be overridden in <experiment>_utilities module.
 
 def get_dropbox(filename):
-    raise RuntimeError, 'Function get_dropbox not implemented.'
+    raise RuntimeError('Function get_dropbox not implemented.')
 
 
-# Function to return string containing sam metadata in the form 
+# Function to return string containing sam metadata in the form
 # of an fcl configuraiton.  It is intended that this function
 # may be overridden in experiment_utilities.py.
 
@@ -990,16 +1026,17 @@ def get_user():
         # Return user name from certificate if Role is Analysis
 
         subject = ''
-        if os.environ.has_key('X509_USER_PROXY'):
-            subject = subprocess.check_output(['voms-proxy-info',
-                                               '-file', os.environ['X509_USER_PROXY'],
-                                               '-subject'], stderr=-1)
-        elif os.environ.has_key('X509_USER_CERT') and os.environ.has_key('X509_USER_KEY'):
-            subject = subprocess.check_output(['voms-proxy-info',
-                                               '-file', os.environ['X509_USER_CERT'],
-                                               '-subject'], stderr=-1)
+        if 'X509_USER_PROXY' in os.environ:
+            subject = convert_str(subprocess.check_output(['voms-proxy-info',
+                                                           '-file', os.environ['X509_USER_PROXY'],
+                                                           '-subject'], stderr=-1))
+        elif 'X509_USER_CERT' in os.environ and 'X509_USER_KEY' in os.environ:
+            subject = convert_str(subprocess.check_output(['voms-proxy-info',
+                                                           '-file', os.environ['X509_USER_CERT'],
+                                                           '-subject'], stderr=-1))
         else:
-            subject = subprocess.check_output(['voms-proxy-info', '-subject'], stderr=-1)
+            subject = convert_str(subprocess.check_output(['voms-proxy-info', '-subject'],
+                                                          stderr=-1))
 
         # Get the last non-numeric CN
 
@@ -1039,7 +1076,7 @@ def get_user():
 
     # Something went wrong...
 
-    raise RuntimeError, 'Unable to determine authenticated user.'
+    raise RuntimeError('Unable to determine authenticated user.')
 
 
 # Function to check whether there is a running project.py process on this node
@@ -1130,7 +1167,73 @@ def check_running(xmlname, stagename):
     return result
 
 
-# Import experiment-specific utilities.  In this imported module, one can 
+# Convert bytes or unicode string to default python str type.
+# Works on python 2 and python 3.
+
+def convert_str(s):
+
+    result = ''
+
+    if type(s) == type(''):
+
+        # Already a default str.
+        # Just return the original.
+
+        result = s
+
+    elif type(s) == type(u''):
+
+        # Unicode and not str.
+        # Convert to bytes.
+
+        result = s.encode()
+
+    elif type(s) == type(b''):
+
+        # Bytes and not str.
+        # Convert to unicode.
+
+        result = s.decode()
+
+    else:
+
+        # Last resort, use standard str conversion.
+
+        result = str(s)
+
+    return result
+
+
+# Convert bytes or unicode string to bytes.
+# Works on python 2 and python 3.
+
+def convert_bytes(s):
+
+    result = ''
+
+    if type(s) == type(b''):
+
+        # Already bytes.
+        # Return the original.
+
+        result = s
+
+    elif type(s) == type(u''):
+
+        # Unicode to bytes.
+
+        result = s.encode()
+
+    else:
+
+        # Anything else, just return the original.
+
+        result = s
+
+    return result
+
+
+# Import experiment-specific utilities.  In this imported module, one can
 # override any function or symbol defined above, or add new ones.
 
 from experiment_utilities import *

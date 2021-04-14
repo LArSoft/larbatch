@@ -9,11 +9,14 @@
 #
 ######################################################################
 
-import sys, os, string, subprocess
+from __future__ import absolute_import
+from __future__ import print_function
+import sys, os, subprocess
 from project_modules.xmlerror import XMLError
 from project_modules.stagedef import StageDef
 import larbatch_posix
-import larbatch_utilities
+from larbatch_utilities import convert_str
+from larbatch_utilities import get_ups_products
 
 # Project definition class contains data parsed from project defition xml file.
 
@@ -52,8 +55,8 @@ class ProjectDef:
         self.run_type = ''                # Sam run type.
         self.run_number = 0               # Sam run number.
         self.script = 'condor_lar.sh'     # Batch script.
-	self.validate_on_worker = 0   # Run post-job validation on the worker node
-	self.copy_to_fts = 0          # Copy a copy of the file to a dropbox scanned by fts. Note that a copy is still sent to <outdir>
+        self.validate_on_worker = 0   # Run post-job validation on the worker node
+        self.copy_to_fts = 0          # Copy a copy of the file to a dropbox scanned by fts. Note that a copy is still sent to <outdir>
         self.cvmfs = 1                    # Cvmfs flag.
         self.stash = 1                    # Stash cache flag.
         self.singularity = 1              # Singularity flag.
@@ -68,10 +71,10 @@ class ProjectDef:
 
         # Project name (attribute)
 
-        if project_element.attributes.has_key('name'):
+        if 'name' in dict(project_element.attributes):
             self.name = str(project_element.attributes['name'].firstChild.data)
         if self.name == '':
-            raise XMLError, 'Project name not specified.'
+            raise XMLError('Project name not specified.')
 
         # Total events (subelement).
 
@@ -80,7 +83,7 @@ class ProjectDef:
             if num_events_element.parentNode == project_element:
                 self.num_events = int(num_events_element.firstChild.data)
         if self.num_events == 0:
-            raise XMLError, 'Number of events not specified.'
+            raise XMLError('Number of events not specified.')
 
         # Number of jobs (subelement).
 
@@ -105,7 +108,7 @@ class ProjectDef:
         # If ups products list is empty, set default.
 
         if len(self.ups) == 0:
-            self.ups = larbatch_utilities.get_ups_products().split(',')
+            self.ups = get_ups_products().split(',')
 
         # OS (subelement).
 
@@ -183,7 +186,7 @@ class ProjectDef:
                 self.memory = int(memory_element.firstChild.data)
 
         # merge (subelement).
- 	
+        
         merge_elements = project_element.getElementsByTagName('merge')
         for merge_element in merge_elements:
             if merge_element.parentNode == project_element:
@@ -191,9 +194,9 @@ class ProjectDef:
                     self.merge = str(merge_element.firstChild.data)
                 else:
                     self.merge = ''
-	    
+
         # anamerge (subelement).
- 	
+
         anamerge_elements = project_element.getElementsByTagName('anamerge')
         for anamerge_element in anamerge_elements:
             if anamerge_element.parentNode == project_element:
@@ -201,7 +204,7 @@ class ProjectDef:
                     self.anamerge = str(anamerge_element.firstChild.data)
                 else:
                     self.anamerge = ''
-	    
+
         # Larsoft (subelement).
 
         larsoft_elements = project_element.getElementsByTagName('larsoft')
@@ -242,7 +245,7 @@ class ProjectDef:
         # Existence of non-null local_release_dir has already been tested.
 
         if check and self.local_release_tar != '' and not larbatch_posix.exists(self.local_release_tar):
-            raise IOError, "Local release directory/tarball %s does not exist." % self.local_release_tar
+            raise IOError("Local release directory/tarball %s does not exist." % self.local_release_tar)
             
         # Sam file type (subelement).
 
@@ -278,45 +281,47 @@ class ProjectDef:
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
                 jobout, joberr = jobinfo.communicate()
+                jobout = convert_str(jobout)
+                joberr = convert_str(joberr)
                 rc = jobinfo.poll()
                 script_path = jobout.splitlines()[0].strip()
             except:
                 pass
             if script_path == '' or not larbatch_posix.access(script_path, os.X_OK):
-                raise IOError, 'Script %s not found.' % self.script
+                raise IOError('Script %s not found.' % self.script)
             self.script = script_path
 
         # Validate-on-worker flag (subelement).
-	
-	worker_validations = project_element.getElementsByTagName('check')
+
+        worker_validations = project_element.getElementsByTagName('check')
         for worker_validation in worker_validations:
             if worker_validation.parentNode == project_element:
                 self.validate_on_worker = int(worker_validation.firstChild.data)
 
         # Copy to FTS flag (subelement).
-	
-	worker_copys = project_element.getElementsByTagName('copy')
+
+        worker_copys = project_element.getElementsByTagName('copy')
         for worker_copy in worker_copys:
             if worker_copy.parentNode == project_element:
                 self.copy_to_fts = int(worker_copy.firstChild.data)    
 
         # Cvmfs flag (subelement).
-	
-	cvmfs_elements = project_element.getElementsByTagName('cvmfs')
+
+        cvmfs_elements = project_element.getElementsByTagName('cvmfs')
         for cvmfs_element in cvmfs_elements:
             if cvmfs_element.parentNode == project_element:
                 self.cvmfs = int(cvmfs_element.firstChild.data)    
 
         # Stash flag (subelement).
-	
-	stash_elements = project_element.getElementsByTagName('stash')
+
+        stash_elements = project_element.getElementsByTagName('stash')
         for stash_element in stash_elements:
             if stash_element.parentNode == project_element:
                 self.stash = int(stash_element.firstChild.data)    
 
         # Singularity flag (subelement).
-	
-	singularity_elements = project_element.getElementsByTagName('singularity')
+
+        singularity_elements = project_element.getElementsByTagName('singularity')
         for singularity_element in singularity_elements:
             if singularity_element.parentNode == project_element:
                 self.singularity = int(singularity_element.firstChild.data)    
@@ -338,6 +343,8 @@ class ProjectDef:
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
                 jobout, joberr = jobinfo.communicate()
+                jobout = convert_str(jobout)
+                joberr = convert_str(joberr)
                 rc = jobinfo.poll()
                 script_path = jobout.splitlines()[0].strip()
             except:
@@ -361,6 +368,8 @@ class ProjectDef:
                                            stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
                 jobout, joberr = jobinfo.communicate()
+                jobout = convert_str(jobout)
+                joberr = convert_str(joberr)
                 rc = jobinfo.poll()
                 script_path = jobout.splitlines()[0].strip()
             except:
@@ -375,8 +384,8 @@ class ProjectDef:
 
         # Add $FHICL_FILE_PATH.
 
-        if check and os.environ.has_key('FHICL_FILE_PATH'):
-            for fcldir in string.split(os.environ['FHICL_FILE_PATH'], ':'):
+        if check and 'FHICL_FILE_PATH' in os.environ:
+            for fcldir in os.environ['FHICL_FILE_PATH'].split(':'):
                 if larbatch_posix.exists(fcldir):
                     self.fclpath.append(fcldir)
 
@@ -385,7 +394,7 @@ class ProjectDef:
         if check:
             for fcldir in self.fclpath:
                 if not larbatch_posix.exists(fcldir):
-                    raise IOError, "Fcl search directory %s does not exist." % fcldir
+                    raise IOError("Fcl search directory %s does not exist." % fcldir)
 
         # Project stages (repeatable subelement).
 
@@ -397,7 +406,7 @@ class ProjectDef:
             # Get base stage, if any.
 
             base_stage = None
-            if stage_element.attributes.has_key('base'):
+            if 'base' in dict(stage_element.attributes):
                 base_name = str(stage_element.attributes['base'].firstChild.data)
                 if base_name != '':
                     for stage in self.stages:
@@ -406,7 +415,7 @@ class ProjectDef:
                             break
 
                     if base_stage == None:
-                        raise LookupError, 'Base stage %s not found.' % base_name
+                        raise LookupError('Base stage %s not found.' % base_name)
 
             self.stages.append(StageDef(stage_element, 
                                         base_stage, 
@@ -497,7 +506,7 @@ class ProjectDef:
     def get_stage(self, stagename):
 
         if len(self.stages) == 0:
-            raise LookupError, "Project does not have any stages."
+            raise LookupError("Project does not have any stages.")
 
         elif stagename == '' and len(self.stages) == 1:
             return self.stages[0]
@@ -509,22 +518,22 @@ class ProjectDef:
 
         # If we fell through to here, we didn't find an appropriate stage.
 
-        raise RuntimeError, 'No stage %s.' % stagename
+        raise RuntimeError('No stage %s.' % stagename)
 
     # Find fcl file on fcl search path.
 
     def get_fcl(self, fclname):
         
-	fcl_list = []
+        fcl_list = []
         for name in fclname:
-	 fcl = ''
-	 for fcldir in self.fclpath:
+         fcl = ''
+         for fcldir in self.fclpath:
             fcl = os.path.join(fcldir, name)
             #print fcl
-	    if larbatch_posix.exists(fcl):
+            if larbatch_posix.exists(fcl):
                 break
          
-	 if fcl == '' or not larbatch_posix.exists(fcl):
-             raise IOError, 'Could not find fcl file %s.' % name
-	 fcl_list.append(fcl)      
+         if fcl == '' or not larbatch_posix.exists(fcl):
+             raise IOError('Could not find fcl file %s.' % name)
+         fcl_list.append(fcl)      
         return fcl_list

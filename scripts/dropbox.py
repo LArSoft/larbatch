@@ -15,14 +15,16 @@
 #
 #----------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys
 import project_utilities
 
 if len(sys.argv) <= 1:
-    print 'Usage: dropbox.py <filename>'
+    print('Usage: dropbox.py <filename>')
     sys.exit(0)
 
 filename = sys.argv[1]
 dir = project_utilities.get_dropbox(filename)
-print dir
+print(dir)
 sys.exit(0)

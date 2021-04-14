@@ -19,6 +19,9 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 # Jobsub exception class.
 
 class JobsubError(Exception):

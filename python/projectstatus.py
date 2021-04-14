@@ -10,6 +10,8 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
 from project_modules.stagestatus import StageStatus
 
 # Project status class.
@@ -34,7 +36,7 @@ class ProjectStatus:
 
         # Update all stages.
 
-        for stagename in self.stats.keys():
+        for stagename in list(self.stats.keys()):
             self.stats[stagename].update()
 
     # Get stage status for specified stage.

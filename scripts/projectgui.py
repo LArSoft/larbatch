@@ -13,6 +13,8 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
 from project_gui_modules.projectapp import ProjectApp
 
 w = ProjectApp()

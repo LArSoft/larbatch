@@ -9,6 +9,9 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 # XML exception class.
 
 class XMLError(Exception):

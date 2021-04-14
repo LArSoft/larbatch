@@ -14,9 +14,13 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 # Import stuff.
 
 import sys, subprocess, json
+from larbatch_utilities import convert_str
 
 # Read and decode stream encoded in sam metadata.
 
@@ -30,9 +34,11 @@ def get_stream(inputfile):
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
     jobout, joberr = jobinfo.communicate()
+    jobout = convert_str(jobout)
+    joberr = convert_str(joberr)
     rc = jobinfo.poll()
     if rc != 0:
-        raise RuntimeError, 'sam_metadata_dumper failed with status %d' % rc
+        raise RuntimeError('sam_metadata_dumper failed with status %d' % rc)
 
     # Decode json string to dictionary.
     # Work around art bug by deleting "runs" line.
@@ -56,10 +62,10 @@ def get_stream(inputfile):
 
     # Extract stream from json dictionary.
 
-    if md.has_key('data_stream'):
+    if 'data_stream' in md:
         result = md['data_stream']
     else:
-        raise RuntimeError, 'Sam metadata does not contain stream.'
+        raise RuntimeError('Sam metadata does not contain stream.')
 
     # Done.
 
@@ -69,5 +75,5 @@ def get_stream(inputfile):
 
 if __name__ == "__main__":
     stream = get_stream(str(sys.argv[1]))
-    print stream
-    sys.exit(0)	
+    print(stream)
+    sys.exit(0) 

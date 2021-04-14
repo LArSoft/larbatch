@@ -10,15 +10,24 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys, traceback
 from project_modules.projectstatus import ProjectStatus
 from project_modules.batchstatus import BatchStatus
 
 # Import GUI stuff
 
-import Tkinter as tk
-import tkMessageBox
-import tkFont
+# Import Tkinter GUI stuff
+
+try:
+    import tkinter as tk
+    import tkinter.messagebox as tkinter_messagebox
+    import tkinter.font as tkinter_font
+except ImportError:
+    import Tkinter as tk
+    import tkMessageBox as tkinter_messagebox
+    import tkFont as tkinter_font
 
 # Make symbolic names for column indices.
 
@@ -79,11 +88,11 @@ class ProjectStatusView(tk.Frame):
         # Add column category headings.
 
         self.stage_cat = tk.Label(self, bg='powderblue', relief=tk.RIDGE, text='',
-                                  padx=10, pady=10, font=tkFont.Font(size=12))
+                                  padx=10, pady=10, font=tkinter_font.Font(size=12))
         self.stage_cat.grid(row=0, column=0, sticky=tk.N+tk.E+tk.W+tk.S)
         self.files_cat = tk.Frame(self, bd=1, relief=tk.SUNKEN, bg='lightsteelblue')
         files_label = tk.Label(self.files_cat, bg='lightsteelblue', relief=tk.FLAT, text='Output',
-                                  padx=10, font=tkFont.Font(size=12))
+                                  padx=10, font=tkinter_font.Font(size=12))
         files_label.pack(side=tk.LEFT, expand=1, fill=tk.BOTH)
         fetchlog_button = tk.Button(self.files_cat, bg='lightcyan', activebackground='aliceblue',
                                     text='Fetchlog', command=self.parent.parent.fetchlog)
@@ -98,7 +107,7 @@ class ProjectStatusView(tk.Frame):
                             sticky=tk.N+tk.E+tk.W+tk.S)
         self.batch_cat = tk.Frame(self, bd=1, relief=tk.SUNKEN, bg='powderblue')
         batch_label = tk.Label(self.batch_cat, bg='powderblue', relief=tk.FLAT, text='Batch Jobs',
-                               padx=10, font=tkFont.Font(size=12))
+                               padx=10, font=tkinter_font.Font(size=12))
         batch_label.pack(side=tk.LEFT, expand=1, fill=tk.BOTH)
         batch_button = tk.Button(self.batch_cat, bg='lightcyan', activebackground='aliceblue', 
                                  text='Update', command=self.update_jobs)
@@ -115,47 +124,47 @@ class ProjectStatusView(tk.Frame):
         # Add column headings.
 
         self.stage_head = tk.Label(self, bg='powderblue', relief=tk.RIDGE, text='Stage',
-                                   padx=10, pady=10, font=tkFont.Font(size=12))
+                                   padx=10, pady=10, font=tkinter_font.Font(size=12))
         self.stage_head.grid(row=1, column=0, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(0, weight=1)
         self.exists_head = tk.Label(self, bg='lightsteelblue', relief=tk.RIDGE, text='Exists?',
-                                    padx=10, font=tkFont.Font(size=12))
+                                    padx=10, font=tkinter_font.Font(size=12))
         self.exists_head.grid(row=1, column=kEXISTS, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kEXISTS, weight=1)
         self.nfile_head = tk.Label(self, bg='lightsteelblue', relief=tk.RIDGE, text='Art Files',
-                                   padx=10, font=tkFont.Font(size=12))
+                                   padx=10, font=tkinter_font.Font(size=12))
         self.nfile_head.grid(row=1, column=kNFILE, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kNFILE, weight=1)
         self.nev_head = tk.Label(self, bg='lightsteelblue', relief=tk.RIDGE, text='Events',
-                                 padx=10, font=tkFont.Font(size=12))
+                                 padx=10, font=tkinter_font.Font(size=12))
         self.nev_head.grid(row=1, column=kNEV, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kNANA, weight=1)
         self.nana_head = tk.Label(self, bg='lightsteelblue', relief=tk.RIDGE, text='Ana Files',
-                                  padx=10, font=tkFont.Font(size=12))
+                                  padx=10, font=tkinter_font.Font(size=12))
         self.nana_head.grid(row=1, column=kNANA, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kNANA, weight=1)
         self.nerror_head = tk.Label(self, bg='lightsteelblue', relief=tk.RIDGE, text='Errors',
-                                    padx=10, font=tkFont.Font(size=12))
+                                    padx=10, font=tkinter_font.Font(size=12))
         self.nerror_head.grid(row=1, column=kNERROR, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kNERROR, weight=1)
         self.miss_head = tk.Label(self, bg='lightsteelblue', relief=tk.RIDGE, text='Missing',
-                                  padx=10, font=tkFont.Font(size=12))
+                                  padx=10, font=tkinter_font.Font(size=12))
         self.miss_head.grid(row=1, column=kNMISS, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kNMISS, weight=1)
         self.idle_head = tk.Label(self, bg='powderblue', relief=tk.RIDGE, text='Idle',
-                                  padx=10, font=tkFont.Font(size=12))
+                                  padx=10, font=tkinter_font.Font(size=12))
         self.idle_head.grid(row=1, column=kIDLE, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kIDLE, weight=1)
         self.running_head = tk.Label(self, bg='powderblue', relief=tk.RIDGE, text='Running',
-                                     padx=10, font=tkFont.Font(size=12))
+                                     padx=10, font=tkinter_font.Font(size=12))
         self.running_head.grid(row=1, column=kRUNNING, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kRUNNING, weight=1)
         self.held_head = tk.Label(self, bg='powderblue', relief=tk.RIDGE, text='Held',
-                                  padx=10, font=tkFont.Font(size=12))
+                                  padx=10, font=tkinter_font.Font(size=12))
         self.held_head.grid(row=1, column=kHELD, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kHELD, weight=1)
         self.other_head = tk.Label(self, bg='powderblue', relief=tk.RIDGE, text='Other',
-                                   padx=10, font=tkFont.Font(size=12))
+                                   padx=10, font=tkinter_font.Font(size=12))
         self.other_head.grid(row=1, column=kOTHER, sticky=tk.N+tk.E+tk.W+tk.S)
         self.columnconfigure(kOTHER, weight=1)
 
@@ -181,31 +190,31 @@ class ProjectStatusView(tk.Frame):
             top['cursor'] = old_cursor
             e = sys.exc_info()
             traceback.print_tb(e[2])
-            tkMessageBox.showerror('', e[1])
+            tkinter_messagebox.showerror('', e[1])
 
         # Update label widgets.
 
-        for key in self.stage_name_labels.keys():
+        for key in list(self.stage_name_labels.keys()):
             self.stage_name_labels[key].grid_forget()
-        for key in self.exists_labels.keys():
+        for key in list(self.exists_labels.keys()):
             self.exists_labels[key].grid_forget()
-        for key in self.nfile_labels.keys():
+        for key in list(self.nfile_labels.keys()):
             self.nfile_labels[key].grid_forget()
-        for key in self.nev_labels.keys():
+        for key in list(self.nev_labels.keys()):
             self.nev_labels[key].grid_forget()
-        for key in self.nana_labels.keys():
+        for key in list(self.nana_labels.keys()):
             self.nana_labels[key].grid_forget()
-        for key in self.nerror_labels.keys():
+        for key in list(self.nerror_labels.keys()):
             self.nerror_labels[key].grid_forget()
-        for key in self.nmiss_labels.keys():
+        for key in list(self.nmiss_labels.keys()):
             self.nmiss_labels[key].grid_forget()
-        for key in self.nidle_labels.keys():
+        for key in list(self.nidle_labels.keys()):
             self.nidle_labels[key].grid_forget()
-        for key in self.nrunning_labels.keys():
+        for key in list(self.nrunning_labels.keys()):
             self.nrunning_labels[key].grid_forget()
-        for key in self.nheld_labels.keys():
+        for key in list(self.nheld_labels.keys()):
             self.nheld_labels[key].grid_forget()
-        for key in self.nother_labels.keys():
+        for key in list(self.nother_labels.keys()):
             self.nother_labels[key].grid_forget()
 
         row = 1
@@ -215,20 +224,20 @@ class ProjectStatusView(tk.Frame):
                 ss = ps.get_stage_status(stage.name)
                 bss = bs.get_stage_status(stage.name)
 
-                if not self.stage_name_labels.has_key(stage.name):
+                if stage.name not in self.stage_name_labels:
                     self.stage_name_labels[stage.name] = tk.Label(self, bg='powderblue',
                                                                   relief=tk.RIDGE,
                                                                   padx=10, pady=5,
-                                                                  font=tkFont.Font(size=12))
+                                                                  font=tkinter_font.Font(size=12))
                 self.stage_name_labels[stage.name]['text'] = stage.name
                 self.stage_name_labels[stage.name].bind('<Button-1>', self.click_stage)
                 self.stage_name_labels[stage.name].grid(row=row, column=0,
                                                         sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.exists_labels.has_key(stage.name):
+                if stage.name not in self.exists_labels:
                     self.exists_labels[stage.name] = tk.Label(self, bg='aliceblue', relief=tk.RIDGE,
-                                                              font=tkFont.Font(size=12))
+                                                              font=tkinter_font.Font(size=12))
                 if ss.exists:
                     self.exists_labels[stage.name]['text'] = 'Yes'
                     self.exists_labels[stage.name]['fg'] = 'black'
@@ -239,31 +248,31 @@ class ProjectStatusView(tk.Frame):
                                                     sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.nfile_labels.has_key(stage.name):
+                if stage.name not in self.nfile_labels:
                     self.nfile_labels[stage.name] = tk.Label(self, bg='aliceblue', relief=tk.RIDGE,
-                                                             font=tkFont.Font(size=12))
+                                                             font=tkinter_font.Font(size=12))
                 self.nfile_labels[stage.name]['text'] = str(ss.nfile)
                 self.nfile_labels[stage.name].grid(row=row, column=kNFILE,
                                                    sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.nev_labels.has_key(stage.name):
+                if stage.name not in self.nev_labels:
                     self.nev_labels[stage.name] = tk.Label(self, bg='aliceblue', relief=tk.RIDGE,
-                                                           font=tkFont.Font(size=12))
+                                                           font=tkinter_font.Font(size=12))
                 self.nev_labels[stage.name]['text'] = str(ss.nev)
                 self.nev_labels[stage.name].grid(row=row, column=kNEV, sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.nana_labels.has_key(stage.name):
+                if stage.name not in self.nana_labels:
                     self.nana_labels[stage.name] = tk.Label(self, bg='aliceblue', relief=tk.RIDGE,
-                                                            font=tkFont.Font(size=12))
+                                                            font=tkinter_font.Font(size=12))
                 self.nana_labels[stage.name]['text'] = str(ss.nana)
                 self.nana_labels[stage.name].grid(row=row, column=kNANA, sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.nerror_labels.has_key(stage.name):
+                if stage.name not in self.nerror_labels:
                     self.nerror_labels[stage.name] = tk.Label(self, bg='aliceblue', relief=tk.RIDGE,
-                                                              font=tkFont.Font(size=12))
+                                                              font=tkinter_font.Font(size=12))
                 self.nerror_labels[stage.name]['text'] = str(ss.nerror)
                 if ss.nerror == 0:
                     self.nerror_labels[stage.name]['fg'] = 'black'
@@ -273,9 +282,9 @@ class ProjectStatusView(tk.Frame):
                                                     sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.nmiss_labels.has_key(stage.name):
+                if stage.name not in self.nmiss_labels:
                     self.nmiss_labels[stage.name] = tk.Label(self, bg='aliceblue', relief=tk.RIDGE,
-                                                             font=tkFont.Font(size=12))
+                                                             font=tkinter_font.Font(size=12))
                 self.nmiss_labels[stage.name]['text'] = str(ss.nmiss)
                 if ss.nmiss == 0:
                     self.nmiss_labels[stage.name]['fg'] = 'black'
@@ -285,34 +294,34 @@ class ProjectStatusView(tk.Frame):
                                                    sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.nidle_labels.has_key(stage.name):
+                if stage.name not in self.nidle_labels:
                     self.nidle_labels[stage.name] = tk.Label(self, bg='lightcyan', relief=tk.RIDGE,
-                                                             font=tkFont.Font(size=12))
+                                                             font=tkinter_font.Font(size=12))
                 self.nidle_labels[stage.name]['text'] = bss[0]
                 self.nidle_labels[stage.name].grid(row=row, column=kIDLE,
                                                    sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.nrunning_labels.has_key(stage.name):
+                if stage.name not in self.nrunning_labels:
                     self.nrunning_labels[stage.name] = tk.Label(self, bg='lightcyan',
                                                                 relief=tk.RIDGE,
-                                                                font=tkFont.Font(size=12))
+                                                                font=tkinter_font.Font(size=12))
                 self.nrunning_labels[stage.name]['text'] = bss[1]
                 self.nrunning_labels[stage.name].grid(row=row,
                                                       column=kRUNNING, sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.nheld_labels.has_key(stage.name):
+                if stage.name not in self.nheld_labels:
                     self.nheld_labels[stage.name] = tk.Label(self, bg='lightcyan', relief=tk.RIDGE,
-                                                             font=tkFont.Font(size=12))
+                                                             font=tkinter_font.Font(size=12))
                 self.nheld_labels[stage.name]['text'] = bss[2]
                 self.nheld_labels[stage.name].grid(row=row, column=kHELD,
                                                    sticky=tk.N+tk.E+tk.W+tk.S)
                 self.rowconfigure(row, weight=1)
 
-                if not self.nother_labels.has_key(stage.name):
+                if stage.name not in self.nother_labels:
                     self.nother_labels[stage.name] = tk.Label(self, bg='lightcyan', relief=tk.RIDGE,
-                                                              font=tkFont.Font(size=12))
+                                                              font=tkinter_font.Font(size=12))
                 self.nother_labels[stage.name]['text'] = bss[3]
                 self.nother_labels[stage.name].grid(row=row, column=kOTHER,
                                                     sticky=tk.N+tk.E+tk.W+tk.S)
@@ -322,7 +331,7 @@ class ProjectStatusView(tk.Frame):
     # Highlight stage.
 
     def highlight_stage(self, stagename):
-        for key in self.stage_name_labels.keys():
+        for key in list(self.stage_name_labels.keys()):
             self.stage_name_labels[key]['bg'] = 'powderblue'
             self.exists_labels[key]['bg'] = 'aliceblue'
             self.nfile_labels[key]['bg'] = 'aliceblue'
@@ -334,7 +343,7 @@ class ProjectStatusView(tk.Frame):
             self.nrunning_labels[key]['bg'] = 'lightcyan'
             self.nheld_labels[key]['bg'] = 'lightcyan'
             self.nother_labels[key]['bg'] = 'lightcyan'
-        if self.stage_name_labels.has_key(stagename):
+        if stagename in self.stage_name_labels:
             self.stage_name_labels[stagename]['bg'] = 'white'
             self.exists_labels[stagename]['bg'] = 'white'
             self.nfile_labels[stagename]['bg'] = 'white'
@@ -361,7 +370,7 @@ class ProjectStatusView(tk.Frame):
             top['cursor'] = old_cursor
             e = sys.exc_info()
             traceback.print_tb(e[2])
-            tkMessageBox.showerror('', e[1])
+            tkinter_messagebox.showerror('', e[1])
         self.update_status()
 
     # Click on stage mouse event callback.

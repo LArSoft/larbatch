@@ -10,14 +10,22 @@
 #
 #----------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
 import sys, os, stat, time, types
-import urllib
+try:
+    import urllib.request as urlrequest
+except ImportError:
+    import urllib as urlrequest
 import datetime
 import socket
 import subprocess
 import shutil
 import threading
-import Queue
+try:
+    import queue
+except ImportError:
+    import Queue as queue
 import uuid
 import samweb_cli
 from project_modules.ifdherror import IFDHError
@@ -35,9 +43,10 @@ from larbatch_utilities import get_sam_metadata
 from larbatch_utilities import get_ups_products
 from larbatch_utilities import get_setup_script_path
 from larbatch_utilities import check_running
+from larbatch_utilities import convert_str
 
 # Prevent root from printing garbage on initialization.
-if os.environ.has_key('TERM'):
+if 'TERM' in os.environ:
     del os.environ['TERM']
 
 # Hide command line arguments from ROOT module.
@@ -77,7 +86,7 @@ def wait_for_stat(path):
     while ntry > 0:
         if larbatch_posix.access(path, os.R_OK):
             return 0
-        print 'Waiting ...'
+        print('Waiting ...')
 
         # Reading the parent directory seems to make files be visible faster.
 
@@ -108,10 +117,10 @@ def get_scratch_dir():
 
     # Get scratch directory path.
 
-    if os.environ.has_key('TMPDIR'):
+    if 'TMPDIR' in os.environ:
         scratch = os.environ['TMPDIR']
 
-    elif os.environ.has_key('SCRATCH'):
+    elif 'SCRATCH' in os.environ:
         scratch = os.environ['SCRATCH']
 
     else:
@@ -122,10 +131,10 @@ def get_scratch_dir():
     # Checkout.
 
     if scratch == '':
-        raise RuntimeError, 'No scratch directory specified.'
+        raise RuntimeError('No scratch directory specified.')
 
     if not larbatch_posix.isdir(scratch) or not larbatch_posix.access(scratch, os.W_OK):
-        raise RuntimeError, 'Scratch directory %s does not exist or is not writeable.' % scratch
+        raise RuntimeError('Scratch directory %s does not exist or is not writeable.' % scratch)
 
     return scratch
 
@@ -187,7 +196,7 @@ def parseInt(s):
 
         # Don't understand.
 
-        raise ValueError, 'Unparseable range token %s.' % token
+        raise ValueError('Unparseable range token %s.' % token)
 
     # Return result in form of a sorted list.
 
@@ -267,7 +276,7 @@ def start_project(defname, default_prjname, max_files, force_snapshot, filelistd
     prjname = default_prjname
     if prjname == '':
         prjname = s.makeProjectName(defname)
-    print 'Starting project %s' % prjname
+    print('Starting project %s' % prjname)
 
     # Make sure we have a certificate.
 
@@ -281,7 +290,7 @@ def start_project(defname, default_prjname, max_files, force_snapshot, filelistd
         nf = len(files)
     else:
         nf = s.countFiles('defname: %s' % defname)
-    print 'Input dataset has %d files.' % nf
+    print('Input dataset has %d files.' % nf)
     if nf == 0:
         return 1
 
@@ -293,13 +302,13 @@ def start_project(defname, default_prjname, max_files, force_snapshot, filelistd
         # Figure out whether limitdef already exists.
 
         if defExists(limitdef) and not filelistdef:
-            print 'Using already created limited dataset definition %s.' % limitdef
+            print('Using already created limited dataset definition %s.' % limitdef)
         else:
             dim = 'defname: %s with limit %d' % (defname, max_files)
             if filelistdef:
                 limitdef = makeFileListDefinition(dim)
             else:
-                print 'Creating limited dataset definition %s.' % limitdef
+                print('Creating limited dataset definition %s.' % limitdef)
                 s.createDefinition(limitdef, dim, user=get_user(), group=get_experiment())
 
         defname = limitdef
@@ -313,12 +322,12 @@ def start_project(defname, default_prjname, max_files, force_snapshot, filelistd
     # Force snapshot?
 
     if force_snapshot:
-        print 'Forcing snapthot.'
+        print('Forcing snapthot.')
         defname = '%s:force' % defname
 
     # Start the project.
 
-    print 'Starting project %s.' % prjname
+    print('Starting project %s.' % prjname)
     s.startProject(prjname,
                    defname=defname, 
                    station=get_experiment(),
@@ -367,7 +376,7 @@ def active_projects2(defname = '', dropboxwait = 0.):
             prjurl = s.findProject(project=prjname, station=get_experiment())
             if prjurl != '':
                 prjsum = s.projectSummary(prjurl)
-                if prjsum.has_key('project_end_time'):
+                if 'project_end_time' in prjsum:
                     tendstr = prjsum['project_end_time']
                     if len(tendstr) >= 19:
                         try:
@@ -404,14 +413,14 @@ def active_projects(defname = ''):
     # Dump station
 
     url = '%s/dumpStation?station=%s' % (s.get_baseurl(), get_experiment())
-    furl = urllib.urlopen(url)
+    furl = urlrequest.urlopen(url)
 
     # Parse response.
 
     for line in furl.readlines():
         words = line.split()
         if len(words) > 5:
-            prjname = words[0]
+            prjname = convert_str(words[0])
             if prjstem == '' or prjname.startswith(prjstem):
                 result.add(prjname)
 
@@ -453,10 +462,10 @@ def make_active_project_dataset(defname, dropboxwait, active_defname, wait_defna
     # Create or update active_defname.
 
     if defExists(active_defname):
-        print 'Updating dataset definition %s' % active_defname
+        print('Updating dataset definition %s' % active_defname)
         s.deleteDefinition(active_defname)
     else:
-        print 'Creating dataset definition %s' % active_defname
+        print('Creating dataset definition %s' % active_defname)
 
     s.createDefinition(active_defname, dim, user=get_user(), group=get_experiment())
 
@@ -491,10 +500,10 @@ def make_active_project_dataset(defname, dropboxwait, active_defname, wait_defna
     # Create or update active_defname.
 
     if defExists(wait_defname):
-        print 'Updating dataset definition %s' % wait_defname
+        print('Updating dataset definition %s' % wait_defname)
         s.deleteDefinition(wait_defname)
     else:
-        print 'Creating dataset definition %s' % wait_defname
+        print('Creating dataset definition %s' % wait_defname)
 
     s.createDefinition(wait_defname, dim, user=get_user(), group=get_experiment())
 
@@ -519,7 +528,7 @@ def makeDummyDef(defname):
 
         # Make dummy definition.
 
-        print 'Making dummy dataset definition %s' % defname
+        print('Making dummy dataset definition %s' % defname)
         test_kca()
         samweb().createDefinition(defname, 'file_id 0', user=get_user(), group=get_experiment())
 
@@ -535,9 +544,9 @@ def addLayerTwo(path, recreate=True):
     if larbatch_posix.exists(path) and path[0:6] == '/pnfs/' and larbatch_posix.stat(path).st_size == 0:
 
         if recreate:
-            print 'Adding layer two for path %s.' % path
+            print('Adding layer two for path %s.' % path)
         else:
-            print 'Deleting empty file %s.' % path
+            print('Deleting empty file %s.' % path)
 
         # Now we got a zero size file in dCache, which kind of files may be
         # missing layer two.
@@ -553,7 +562,7 @@ def addLayerTwo(path, recreate=True):
 
         save_vars = {}
         for var in ('X509_USER_CERT', 'X509_USER_KEY'):
-            if os.environ.has_key(var):
+            if var in os.environ:
                 save_vars[var] = os.environ[var]
                 del os.environ[var]
 
@@ -562,25 +571,25 @@ def addLayerTwo(path, recreate=True):
         command = ['ifdh', 'cp', '/dev/null', path]
         jobinfo = subprocess.Popen(command, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
-        q = Queue.Queue()
+        q = queue.Queue()
         thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
         thread.start()
         thread.join(timeout=60)
         if thread.is_alive():
-            print 'Terminating subprocess.'
+            print('Terminating subprocess.')
             jobinfo.terminate()
             thread.join()
         rc = q.get()
-        jobout = q.get()
-        joberr = q.get()
+        jobout = convert_str(q.get())
+        joberr = convert_str(q.get())
         if rc != 0:
-            for var in save_vars.keys():
+            for var in list(save_vars.keys()):
                 os.environ[var] = save_vars[var]
             raise IFDHError(command, rc, jobout, joberr)
 
         # Restore environment variables.
 
-        for var in save_vars.keys():
+        for var in list(save_vars.keys()):
             os.environ[var] = save_vars[var]
 
 # This function returns jobsub_submit options that should be included for 
@@ -744,13 +753,13 @@ def tokenizeRPN(dim):
                     done = True
                 elif last == 'isparentof:(':
                     if len(result) == 0 or result[-1] == 'or' or result[-1] == 'minus':
-                        raise RuntimeError, 'isparentof: parse error'
+                        raise RuntimeError('isparentof: parse error')
                     last = result.pop()
                     result.append('isparentof:( %s )' % last)
                     done = True
                 elif last == 'ischildof:(':
                     if len(result) == 0 or result[-1] == 'or' or result[-1] == 'minus':
-                        raise RuntimeError, 'ischildof: parse error'
+                        raise RuntimeError('ischildof: parse error')
                     last = result.pop()
                     result.append('ischildof:( %s )' % last)
                     done = True
@@ -792,12 +801,12 @@ def listFiles(dim):
 
     global samcache
 
-    print 'Generating completed set of files using dimension "%s".' % dim
+    print('Generating completed set of files using dimension "%s".' % dim)
 
     # Check cache.
 
-    if samcache.has_key(dim):
-        print 'Fetching result from sam cache.'
+    if dim in samcache:
+        print('Fetching result from sam cache.')
         return samcache[dim]
 
     # As a first step, expand out "defname:" clauses containing top level "or" or "minus"
@@ -827,7 +836,7 @@ def listFiles(dim):
             set1 = stack.pop()
             set2 = stack.pop()
             union = set1 | set2
-            print 'Set union %d files' % len(union)
+            print('Set union %d files' % len(union))
             stack.append(union)
 
         elif item == 'minus':
@@ -837,7 +846,7 @@ def listFiles(dim):
             set1 = stack.pop()
             set2 = stack.pop()
             diff = set2 - set1
-            print 'Set difference %d files' % len(diff)
+            print('Set difference %d files' % len(diff))
             stack.append(diff)
 
         elif item.startswith('with limit'):
@@ -847,7 +856,7 @@ def listFiles(dim):
             n = int(item[10:])
             while len(stack[-1]) > n:
                 stack[-1].pop()
-            print 'Truncated to %d files' % len(stack[-1])
+            print('Truncated to %d files' % len(stack[-1]))
 
         else:
 
@@ -855,19 +864,19 @@ def listFiles(dim):
             # Evaluate this dimension as a completed set, and push this set
             # onto the stack.
 
-            print 'Evaluating "%s"' % item
-            if samcache.has_key(item):
-                print 'Fetching result from cache.'
+            print('Evaluating "%s"' % item)
+            if item in samcache:
+                print('Fetching result from cache.')
                 files = samcache[item]
             else:
                 files = set(samweb().listFiles(item))
                 samcache[item] = files
-            print 'Result %d files' % len(files)
+            print('Result %d files' % len(files))
             stack.append(files)
 
     # Done.
 
-    print 'Final result %d files' % len(stack[-1])
+    print('Final result %d files' % len(stack[-1]))
     samcache[dim] = stack[-1]
     return stack[-1]
 
@@ -887,11 +896,11 @@ def makeFileListDefinition(list_or_dim):
     flist = []
     if type(list_or_dim) == type([]) or type(list_or_dim) == type(set()):
         flist = list_or_dim
-        print 'Making file list definition from %s with %d elements.' % (type(list_or_dim),
-                                                                         len(list_or_dim))
+        print('Making file list definition from %s with %d elements.' % (type(list_or_dim),
+                                                                         len(list_or_dim)))
     else:
         flist = listFiles(list_or_dim)
-        print 'Making file list definition using dimension "%s"' % list_or_dim
+        print('Making file list definition using dimension "%s"' % list_or_dim)
 
     listdim=''
     for filename in flist:

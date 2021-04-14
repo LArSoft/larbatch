@@ -1870,12 +1870,12 @@ for ftype in ${DATAFILETYPES[*]}; do
     if [ -f $datafile ]; then
       json=${datafile}.json
       if [ -f $json ]; then
-        ./root_metadata.py $datafile > ${json}2
+        ./root_metadata.py --output="${json}2" "$datafile" >& /dev/null
         ./merge_json.py $json ${json}2 > ${json}3
         mv -f ${json}3 $json
         rm ${json}2
       else
-        ./root_metadata.py $datafile > $json
+        ./root_metadata.py --output="$json" "$datafile" >& /dev/null
       fi
     fi
   done

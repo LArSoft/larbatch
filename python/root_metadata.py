@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 # Import stuff.
 
-import sys, os, string, subprocess, json, stream
+import sys, os, subprocess, json, stream
 import larbatch_posix
 import larbatch_utilities
+from larbatch_utilities import convert_str
 import project_utilities
 
 # Import ROOT (hide command line arguments).
@@ -13,7 +17,7 @@ myargv = sys.argv
 sys.argv = myargv[0:1]
 sys.argv.append('-n')
 # Prevent root from printing garbage on initialization.
-if os.environ.has_key('TERM'):
+if 'TERM' in os.environ:
     del os.environ['TERM']
 import ROOT
 ROOT.gErrorIgnoreLevel = ROOT.kError
@@ -27,8 +31,8 @@ warnings.filterwarnings('ignore', category = RuntimeWarning, message = 'creating
 # Convert adler32-1 (used by dcache) to adler32-0 (used by sam).
 
 def convert_1_adler32_to_0_adler32(crc, filesize):
-    crc = long(crc)
-    filesize = long(filesize)
+    crc = int(crc)
+    filesize = int(filesize)
     size = int(filesize % 65521)
     s1 = (crc & 0xffff)
     s2 = ((crc >> 16) &  0xffff)
@@ -46,14 +50,14 @@ def enstoreChecksum(fileobj):
     while 1:
         try:
             s = fileobj.read(readblocksize)
-        except (OSError, IOError), ex:
+        except (OSError, IOError) as ex:
             raise Error(str(ex))
         if not s: break
         crc = zlib.adler32(s,crc)
-    crc = long(crc)
+    crc = int(crc)
     if crc < 0:
         # Return 32 bit unsigned value
-        crc  = (crc & 0x7FFFFFFFL) | 0x80000000L
+        crc  = (crc & 0x7FFFFFFF) | 0x80000000
     return { "crc_value" : str(crc), "crc_type" : "adler 32 crc type" }
 
 def fileEnstoreChecksum(path):
@@ -66,7 +70,7 @@ def fileEnstoreChecksum(path):
         try:
             f = larbatch_posix.open(path,'rb')
             crc = enstoreChecksum(f)
-        except (IOError, OSError), ex:
+        except (IOError, OSError) as ex:
             raise Error(str(ex))
         finally:
             f.close()
@@ -85,17 +89,17 @@ def fileEnstoreChecksum(path):
             # stored checksum using srm.
             project_utilities.test_proxy()
             cmd = ['srmls', '-2', '-l', srm_url]
-            srmout = subprocess.check_output(cmd)
+            srmout = convert_str(subprocess.check_output(cmd))
             first = True
             crc0 = 0
-            for line in string.split(srmout, '\n'):
+            for line in srmout.split('\n'):
                 if first:
-                    size = long(line[2:line.find('/')-1])
+                    size = int(line[2:line.find('/')-1])
                     first = False
                     continue
                 if line.find("Checksum value:") > 0:
                     ssum = line[line.find(':') + 2:]
-                    crc1 = long( ssum , base = 16 )
+                    crc1 = int( ssum , base = 16 )
                     crc0 = convert_1_adler32_to_0_adler32(crc1, size)
                     break
 
@@ -118,7 +122,7 @@ def get_external_metadata(inputfile):
     if not os.path.exists(inputfile):
         return md
             
-    # Get the other meta data field parameters						
+    # Get the other meta data field parameters                                          
     md['file_name'] =  os.path.basename(inputfile)
     md['file_size'] =  str(os.path.getsize(inputfile))
     md['crc'] = fileEnstoreChecksum(inputfile)
@@ -130,6 +134,7 @@ def get_external_metadata(inputfile):
 
     # Root checks.
 
+    ROOT.gEnv.SetValue('RooFit.Banner', '0')
     file = ROOT.TFile.Open(larbatch_posix.root_stream(inputfile))
     if file and file.IsOpen() and not file.IsZombie():
 
@@ -175,7 +180,23 @@ def get_external_metadata(inputfile):
     return md
 
 if __name__ == "__main__":
-    md = get_external_metadata(str(sys.argv[1]))
+    
+    import argparse
+    
+    Parser = argparse.ArgumentParser \
+      (description="Extracts metadata for a ROOT file.")
+    
+    Parser.add_argument("InputFile", help="ROOT file to extract metadata about")
+    Parser.add_argument("--output", "-o", dest="OutputFile", default=None,
+      help="JSON file to write the output to [default: screen]"
+      )
+    
+    args = Parser.parse_args()
+    
+    md = get_external_metadata(args.InputFile)
     mdtext = json.dumps(md, indent=2, sort_keys=True)
-    print mdtext
-    sys.exit(0)	
+    
+    outputFile = open(args.OutputFile, 'w') if args.OutputFile else sys.stdout
+    print(mdtext, file=outputFile)
+    
+    sys.exit(0)

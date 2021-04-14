@@ -13,6 +13,9 @@
 #
 #---------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 # Import stuff.
 
 import sys, json
@@ -29,10 +32,10 @@ def merge_json_objects(json_objects):
     # are identical.
 
     for json_object in json_objects:
-        for key in json_object.keys():
-            if key in merged.keys():
+        for key in list(json_object.keys()):
+            if key in list(merged.keys()):
                 if json_object[key] != merged[key]:
-                    raise RuntimeError, 'Duplicate nonmatching key %s.' % key
+                    raise RuntimeError('Duplicate nonmatching key %s.' % key)
             else:
                 merged[key] = json_object[key]
 
@@ -50,17 +53,17 @@ def merge_json_files(json_filenames):
     for json_filename in json_filenames:
         json_file = open(json_filename)
         if not json_file:
-            raise IOError, 'Unable to open json file %s.' % json_filename
+            raise IOError('Unable to open json file %s.' % json_filename)
         obj = json.load(json_file)
         json_objects.append(obj)
 
     # Combine json objects into a single result object.
 
     merged = merge_json_objects(json_objects)
-    print json.dumps(merged, indent=2, sort_keys=True)
+    print(json.dumps(merged, indent=2, sort_keys=True))
 
 if __name__ == "__main__":
 
     json_filenames = sys.argv[1:]
     merge_json_files(json_filenames)
-    sys.exit(0)	
+    sys.exit(0) 

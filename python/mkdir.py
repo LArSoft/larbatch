@@ -30,6 +30,9 @@
 #
 ######################################################################
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 # Imports
 
 import sys, os, ifdh
@@ -59,11 +62,11 @@ def main(argv):
             verbose = 1
             del args[0]
         elif args[0][0] == '-':
-            print 'Unknown option %s' % args[0]
+            print('Unknown option %s' % args[0])
             return 1
         else:
             if dir != '':
-                print 'Too many arguments.'
+                print('Too many arguments.')
                 return 1
             dir = args[0]
             del args[0]
@@ -86,9 +89,9 @@ def help():
             doprint = 0
         if doprint:
             if len(line) > 2:
-                print line[2:],
+                print(line[2:], end=' ')
             else:
-                print
+                print()
     return
 
 
@@ -107,7 +110,7 @@ def mkdir(dir, verbose):
 
     if dir == '/':
         if verbose:
-            print 'mkdir asked to make directory \'/\'.'
+            print('mkdir asked to make directory \'/\'.')
         return
 
     # Test whether target directory already exists.
@@ -118,7 +121,7 @@ def mkdir(dir, verbose):
         # If target directory already exists, just return.
 
         if verbose:
-            print 'Directory %s already exists.' % dir
+            print('Directory %s already exists.' % dir)
         return
 
     else:
@@ -126,7 +129,7 @@ def mkdir(dir, verbose):
         # Target directoroy doesn't exist.
 
         if verbose:
-            print 'Directory %s doesn\'t exist.' % dir
+            print('Directory %s doesn\'t exist.' % dir)
 
         # Make sure that the parent directory exists by calling this function recursively.
 
@@ -139,11 +142,11 @@ def mkdir(dir, verbose):
         ok = False
         try:
             if verbose:
-                print 'Making directory %s' % dir
+                print('Making directory %s' % dir)
             Ifdh.mkdir(dir)
             ok = True
         except:
-            print 'Caught exception from Ifdh.mkdir for directory %s.' % dir
+            print('Caught exception from Ifdh.mkdir for directory %s.' % dir)
             ok = False
         if not ok:
             sys.exit(1)
