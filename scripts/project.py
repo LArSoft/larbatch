@@ -3141,7 +3141,11 @@ def dojobsub(project, stage, makeup, recur, dryrun):
         else:
             p = project_utilities.get_singularity(project.os)
             if p != '':
-                command.append(r"""--lines='+SingularityImage="%s"'""" % p)
+                if (command_njobs > 1 or project.force_dag) and \
+                   (inputdef != '' or stage.mixinputdef != '') :
+                    command.append(r"""--lines='+SingularityImage=\"%s\"'""" % p)
+                else:
+                    command.append(r"""--lines='+SingularityImage="%s"'""" % p)
             else:
                 raise RuntimeError('No singularity image found for %s' % project.os)
     if not stage.pubs_output:
