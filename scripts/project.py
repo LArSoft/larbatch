@@ -3141,7 +3141,7 @@ def dojobsub(project, stage, makeup, recur, dryrun):
         else:
             p = project_utilities.get_singularity(project.os)
             if p != '':
-                if (command_njobs > 1 or project.force_dag) and \
+                if (stage.num_jobs > 1 or project.force_dag) and \
                    (inputdef != '' or stage.mixinputdef != '') :
                     command.append(r"""--lines='+SingularityImage=\"%s\"'""" % p)
                 else:
