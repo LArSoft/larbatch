@@ -1014,6 +1014,21 @@ if [ x$LOCALDIR != x ]; then
   fi
   sed "s@setenv MRB_INSTALL.*@setenv MRB_INSTALL ${TMP}/local@" $TMP/local/setup | \
   sed "s@setenv MRB_TOP.*@setenv MRB_TOP ${TMP}@" > $TMP/local/setup.local
+
+  # Make sure we have the correct version of mrb setup 
+
+  if grep -q bin/shell_independence $TMP/local/setup.local; then
+
+    # This is an old style working area.
+    # Set up old version of mrb.
+
+    echo "Setting up old version of mrb."
+    unsetup mrb
+    setup mrb -o
+  fi
+
+  # Do local setup
+
   . $TMP/local/setup.local
   #echo "MRB_INSTALL=${MRB_INSTALL}."
   #echo "MRB_QUALS=${MRB_QUALS}."
@@ -1059,6 +1074,21 @@ if [ x$LOCALTAR != x ]; then
   echo "Initializing localProducts from tarball ${LOCALTAR}."
   sed "s@setenv MRB_INSTALL.*@setenv MRB_INSTALL ${TMP}/local@" $TMP/local/setup | \
   sed "s@setenv MRB_TOP.*@setenv MRB_TOP ${TMP}@" > $TMP/local/setup.local
+
+  # Make sure we have the correct version of mrb setup 
+
+  if grep -q bin/shell_independence $TMP/local/setup.local; then
+
+    # This is an old style working area.
+    # Set up old version of mrb.
+
+    echo "Setting up old version of mrb."
+    unsetup mrb
+    setup mrb -o
+  fi
+
+  # Do local setup
+
   . $TMP/local/setup.local
   #echo "MRB_INSTALL=${MRB_INSTALL}."
   #echo "MRB_QUALS=${MRB_QUALS}."
