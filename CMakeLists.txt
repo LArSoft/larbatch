@@ -2,9 +2,9 @@
 
 #  This simply copies files into an install directory - there is no build
 
-CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
+cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
 
-project(larbatch NONE)
+project(larbatch VERSION 01.56.02 LANGUAGES NONE)
 
 # cetbuildtools contains our cmake modules
 set( CETBUILDTOOLS_VERSION $ENV{CETBUILDTOOLS_VERSION} )
