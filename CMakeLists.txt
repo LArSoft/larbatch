@@ -27,4 +27,5 @@ add_subdirectory(scripts)
 add_subdirectory(python)
 
 # packaging utility
-include(UseCPack)
+#include(UseCPack)
+cet_cmake_config(NO_CMAKE_CONFIG)
