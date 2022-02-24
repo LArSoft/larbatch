@@ -251,7 +251,7 @@ libdir	-
 #
 ####################################
 product		version		qual	flags		<table_format=2>
-cetmodules	v3_05_04	-	only_for_build
+cetmodules	v3_06_01	-	only_for_build
 sam_web_client	-c		-	optional
 end_product_list
 ####################################
