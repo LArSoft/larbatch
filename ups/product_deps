@@ -88,6 +88,7 @@
 ####################################
 parent		larbatch
 chains		current
+noarch
 no_fq_dir
 ####################################
 
