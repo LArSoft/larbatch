@@ -809,7 +809,10 @@ def chmod(path, mode):
     else:
         if debug:
             print('*** Larbatch_posix: Change mode for %s using posix.' % path)
-        os.chmod(path, mode)
+        try:
+            os.chmod(path, mode)
+        except:
+            print('Warning: chmod failed for path %s' % path)
 
 
 # Make symbolic link.
