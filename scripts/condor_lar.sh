@@ -1868,6 +1868,8 @@ fi
 # Also randomize and shorten names of data files that are longer than
 # 200 characters.
 
+# Also randomize data files that are already declared to sam.
+
 ran=0
 if [ $USE_SAM -eq 0 -a x$INFILE = x -a x$INLIST = x ]; then
   ran=1
@@ -1877,6 +1879,9 @@ for ftype in ${DATAFILETYPES[*]}; do
   for datafile in *.${ftype}; do
     if [ -f $datafile ]; then
       nc=`echo $datafile | wc -c`
+      if ifdh getMetadata $datafile > /dev/null 2> /dev/null; then
+        nc=200
+      fi
       if [ -f ${datafile}.json -o $ran != 0 -o $nc -ge 200 ]; then
         base=`basename $datafile`
         ext=${base##*.}

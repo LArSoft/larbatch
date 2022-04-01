@@ -359,9 +359,7 @@ def ifdh_chmod(path, mode):
     jobout = convert_str(q.get())
     joberr = convert_str(q.get())
     if rc != 0:
-        for var in list(save_vars.keys()):
-            os.environ[var] = save_vars[var]
-        raise IFDHError(cmd, rc, jobout, joberr)
+        print('Warning: ifdh chmod failed for path %s' % path)
 
     # Restore environment variables.
 
