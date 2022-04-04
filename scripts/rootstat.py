@@ -18,6 +18,9 @@
 #               branches only.  Use --level 2 to also see subbranches.
 # --nfile n   - Number of files to analyze (default all).
 # --all       - Print analysis of each file (default is only summary).
+# --s1        - Sort branches by uncompressed size.
+# --s2        - Sort branches by compressed size (default).
+# --s3        - Sort branches by name.
 #
 # Arguments:
 #
@@ -66,7 +69,7 @@ def help():
 
 # Analyze root file.
 
-def analyze(root, level, gtrees, gbranches, doprint):
+def analyze(root, level, gtrees, gbranches, doprint, sorttype):
 
     trees = {}
     events = None
@@ -109,6 +112,8 @@ def analyze(root, level, gtrees, gbranches, doprint):
 
     if events:
 
+        branch_tuples = {}
+
         if doprint:
             print('   Total bytes  Zipped bytes   Comp.  Branch name')
             print('   -----------  ------------   -----  -----------')
@@ -144,7 +149,15 @@ def analyze(root, level, gtrees, gbranches, doprint):
                                 comp = float(ntot) / float(nzip)
                             else:
                                 comp = 0.
-                            print('%14d%14d%8.2f  %s' % (ntot, nzip, comp, name))
+                            branch_key = None
+                            if sorttype == 1:
+                                branch_key = ntot
+                            elif sorttype == 2:
+                                branch_key = nzip
+                            else:
+                                branch_key = name
+                            branch_tuples[branch_key] = (ntot, nzip, comp, name)
+                            #print('%14d%14d%8.2f  %s' % (ntot, nzip, comp, name))
 
                         # Remember information about branches.
                         
@@ -167,8 +180,16 @@ def analyze(root, level, gtrees, gbranches, doprint):
                                         comp = float(ntot) / float(nzip)
                                     else:
                                         comp = 0.
-                                    print('%14d%14d%8.2f  %s' % (ntot, nzip, comp,
-                                                                 subsubbranch.GetName()))
+                                branch_key = None
+                                if sorttype == 1:
+                                    branch_key = ntot
+                                elif sorttype == 2:
+                                    branch_key = nzip
+                                else:
+                                    branch_key = name
+                                    branch_tuples[branch_key] = (ntot, nzip, comp, name)
+                                    #print('%14d%14d%8.2f  %s' % (ntot, nzip, comp,
+                                    #                             subsubbranch.GetName()))
 
                                 # Remember information about branches.
                         
@@ -177,6 +198,17 @@ def analyze(root, level, gtrees, gbranches, doprint):
                                     gbranches[name][1] = gbranches[name][1] + nzip
                                 else:
                                     gbranches[name] = [ntot, nzip]
+
+        # Print sorted information about branches.
+
+        if doprint:
+            for branch_key in sorted(branch_tuples.keys()):
+                branch_tuple = branch_tuples[branch_key]
+                ntot = branch_tuple[0]
+                nzip = branch_tuple[1]
+                comp = branch_tuple[2]
+                name = branch_tuple[3]
+                print('%14d%14d%8.2f  %s' % (ntot, nzip, comp, name))
 
         # Do summary of all branches.
 
@@ -223,6 +255,7 @@ def main(argv):
     level = 1
     nfilemax = 0
     all = 0
+    sorttype = 2
 
     args = argv[1:]
     while len(args) > 0:
@@ -252,6 +285,27 @@ def main(argv):
             # All files flag.
 
             all = 1
+            del args[0]
+            
+        elif args[0] == '--s1':
+
+            # Sort flag.
+
+            sorttype = 1
+            del args[0]
+            
+        elif args[0] == '--s2':
+
+            # Sort flag.
+
+            sorttype = 2
+            del args[0]
+            
+        elif args[0] == '--s3':
+
+            # Sort flag.
+
+            sorttype = 3
             del args[0]
             
         elif args[0][0] == '-':
@@ -304,7 +358,7 @@ def main(argv):
 
         # Analyze this file.
         
-        analyze(root, level, gtrees, gbranches, all)
+        analyze(root, level, gtrees, gbranches, all, sorttype)
 
     print('\n%d files analyzed.' % nfile)
                     
@@ -324,6 +378,7 @@ def main(argv):
     allname = 'All branches'
     ntot = 0
     nzip = 0
+    branch_tuples = {}
     for key in sorted(gbranches.keys()):
         if key != allname:
             ntot = gbranches[key][0]
@@ -332,7 +387,26 @@ def main(argv):
                 comp = float(ntot) / float(nzip)
             else:
                 comp = 0.
-            print('%14d%14d%8.2f  %s' % (ntot, nzip, comp, key))
+            branch_key = None
+            if sorttype == 1:
+                branch_key = ntot
+            elif sorttype == 2:
+                branch_key = nzip
+            else:
+                branch_key = key
+            branch_tuples[branch_key] = (ntot, nzip, comp, key)
+            #print('%14d%14d%8.2f  %s' % (ntot, nzip, comp, key))
+
+    # Print sorted information about branches.
+
+    for branch_key in sorted(branch_tuples.keys()):
+        branch_tuple = branch_tuples[branch_key]
+        ntot = branch_tuple[0]
+        nzip = branch_tuple[1]
+        comp = branch_tuple[2]
+        name = branch_tuple[3]
+        print('%14d%14d%8.2f  %s' % (ntot, nzip, comp, name))
+
     if allname in gbranches:
         ntot = gbranches[allname][0]
         nzip = gbranches[allname][1]
