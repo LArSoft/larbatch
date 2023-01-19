@@ -3312,7 +3312,7 @@ def dojobsub(project, stage, makeup, recur, dryrun):
 
         # Start project jobsub command.
 
-        start_command = ['jobsub']
+        start_command = ['jobsub_submit']
 
         # General options.
 
@@ -3390,7 +3390,7 @@ def dojobsub(project, stage, makeup, recur, dryrun):
 
         # Stop project jobsub command.
 
-        stop_command = ['jobsub']
+        stop_command = ['jobsub_submit']
 
         # General options.
 
@@ -3473,8 +3473,6 @@ def dojobsub(project, stage, makeup, recur, dryrun):
                     if not first:
                         dag.write(' ')
                     dag.write(word)
-                    if word[:6] == 'jobsub':
-                        dag.write(' -n')
                     first = False
                 dag.write('\n\n')
             dag.write('</parallel>\n')
@@ -3496,16 +3494,12 @@ def dojobsub(project, stage, makeup, recur, dryrun):
                     else:
                         if not first:
                             dag.write(' ')
-                        if word[:6] == 'jobsub':
-                            word = 'jobsub'
                         if word[:7] == '--role=':
                             word = ''
                         if word.startswith('--jobsub-server='):
                             word = ''
                         word = project_utilities.dollar_escape(word)
                         dag.write(word)
-                        if word[:6] == 'jobsub':
-                            dag.write(' -n')
                         first = False
             dag.write(' --process %d\n' % process)
             dag.write('\n')
@@ -3521,8 +3515,6 @@ def dojobsub(project, stage, makeup, recur, dryrun):
                     if not first:
                         dag.write(' ')
                     dag.write(word)
-                    if word[:6] == 'jobsub':
-                        dag.write(' -n')
                     first = False
                 dag.write('\n\n')
             dag.write('</parallel>\n')
@@ -3584,6 +3576,9 @@ def dojobsub(project, stage, makeup, recur, dryrun):
             for line in jobout.split('\n'):
                 if "JobsubJobId" in line:
                     jobid = line.strip().split()[-1]
+                elif "Use job id" in line:
+                    jobid = line.strip().split()[3]
+            print('job id = %s' % jobid)
             if not jobid:
                 raise JobsubError(command, rc, jobout, joberr)
         print('jobsub_submit finished.')
