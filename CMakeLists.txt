@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 find_package(cetmodules REQUIRED)
-project(larbatch VERSION 01.57.01 LANGUAGES NONE)
+project(larbatch VERSION 01.58.00 LANGUAGES NONE)
 
 include(CetCMakeEnv)
 
