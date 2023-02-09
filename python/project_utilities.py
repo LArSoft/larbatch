@@ -45,17 +45,6 @@ from larbatch_utilities import get_setup_script_path
 from larbatch_utilities import check_running
 from larbatch_utilities import convert_str
 
-# Prevent root from printing garbage on initialization.
-if 'TERM' in os.environ:
-    del os.environ['TERM']
-
-# Hide command line arguments from ROOT module.
-myargv = sys.argv
-sys.argv = myargv[0:1]
-import ROOT
-ROOT.gErrorIgnoreLevel = ROOT.kError
-sys.argv = myargv
-
 # Global variables.
 
 samweb_obj = None       # Initialized SAMWebClient object
@@ -636,14 +625,6 @@ def path_to_url(path):
 
 def path_to_local(path):
     return path
-
-# Class SafeTFile is retired.  For compatibility, calls to the former 
-# constructor of class SafeTFile are now simply passed to the ROOT
-# TFile open method.  Note that class SafeTFile only ever supported
-# opening root files for reading.
-
-def SafeTFile(path):
-    return ROOT.TFile.Open(path)
 
 # Expand "defname:" clauses in a sam dimension.
 

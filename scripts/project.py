@@ -482,7 +482,7 @@ try:
 except ImportError:
     import Queue as queue
 from xml.dom.minidom import parse
-import project_utilities, root_metadata
+import project_utilities
 from project_modules.projectdef import ProjectDef
 from project_modules.projectstatus import ProjectStatus
 from project_modules.batchstatus import BatchStatus
@@ -2852,8 +2852,8 @@ def dojobsub(project, stage, makeup, recur, dryrun):
         jobout = convert_str(jobout)
         joberr = convert_str(joberr)
         rc = jobinfo.poll()
-        helper_path = jobout.splitlines()[0].strip()
         if rc == 0:
+            helper_path = jobout.splitlines()[0].strip()
             work_helper = os.path.join(tmpworkdir, helper)
             if helper_path != work_helper:
                 larbatch_posix.copy(helper_path, work_helper)
@@ -2883,8 +2883,8 @@ def dojobsub(project, stage, makeup, recur, dryrun):
         jobout = convert_str(jobout)
         joberr = convert_str(joberr)
         rc = jobinfo.poll()
-        helper_path = jobout.splitlines()[-1].strip()
         if rc == 0:
+            helper_path = jobout.splitlines()[-1].strip()
             #print 'helper_path = %s' % helper_path
             work_helper = os.path.join(tmpworkdir, os.path.basename(helper_path))
             if helper_path != work_helper:

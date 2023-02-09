@@ -11,17 +11,9 @@ import larbatch_utilities
 from larbatch_utilities import convert_str
 import project_utilities
 
-# Import ROOT (hide command line arguments).
+# Defer importing ROOT.
 
-myargv = sys.argv
-sys.argv = myargv[0:1]
-sys.argv.append('-n')
-# Prevent root from printing garbage on initialization.
-if 'TERM' in os.environ:
-    del os.environ['TERM']
-import ROOT
-ROOT.gErrorIgnoreLevel = ROOT.kError
-sys.argv = myargv
+ROOT = None
 
 # Filter warnings.
 
@@ -114,6 +106,25 @@ def fileEnstoreChecksum(path):
     return crc
 
 def get_external_metadata(inputfile):
+
+    global ROOT
+
+    # Import ROOT, if not already done.
+
+    if ROOT == None:
+
+        # Hide command line arguments.
+
+        myargv = sys.argv
+        sys.argv = myargv[0:1]
+        sys.argv.append('-n')
+
+        # Prevent root from printing garbage on initialization.
+        if 'TERM' in os.environ:
+            del os.environ['TERM']
+        import ROOT
+        ROOT.gErrorIgnoreLevel = ROOT.kError
+        sys.argv = myargv
 
     # define an empty python dictionary
     md = {}
