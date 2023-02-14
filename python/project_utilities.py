@@ -248,6 +248,17 @@ def samweb():
 
     global samweb_obj
 
+    # Try with "disable_token_auth" argument.
+
+    if samweb_obj == None:
+        try:
+            samweb_obj = samweb_cli.SAMWebClient(experiment=get_experiment(),
+                                                 disable_token_auth = True)
+        except TypeError:
+            samweb_obj = None
+
+    # Try without "disable_token_auth" argument.
+
     if samweb_obj == None:
         samweb_obj = samweb_cli.SAMWebClient(experiment=get_experiment())
 
