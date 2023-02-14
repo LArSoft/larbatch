@@ -322,7 +322,7 @@ def start_project(defname, default_prjname, max_files, force_snapshot, filelistd
     # Force snapshot?
 
     if force_snapshot:
-        print('Forcing snapthot.')
+        print('Forcing snapshot.')
         defname = '%s:force' % defname
 
     # Start the project.
