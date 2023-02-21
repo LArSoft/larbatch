@@ -32,7 +32,7 @@ from project_modules.ifdherror import IFDHError
 import larbatch_posix
 import larbatch_utilities
 from larbatch_utilities import get_experiment, get_user, get_role, get_prouser
-from larbatch_utilities import test_ticket, test_kca, test_proxy, get_kca, get_proxy
+from larbatch_utilities import test_ticket, test_kca, test_proxy, test_token, get_kca, get_proxy, get_token
 from larbatch_utilities import dimensions
 from larbatch_utilities import dimensions_datastream
 from larbatch_utilities import wait_for_subprocess
@@ -45,21 +45,66 @@ from larbatch_utilities import get_setup_script_path
 from larbatch_utilities import check_running
 from larbatch_utilities import convert_str
 
-# Prevent root from printing garbage on initialization.
-if 'TERM' in os.environ:
-    del os.environ['TERM']
-
-# Hide command line arguments from ROOT module.
-myargv = sys.argv
-sys.argv = myargv[0:1]
-import ROOT
-ROOT.gErrorIgnoreLevel = ROOT.kError
-sys.argv = myargv
-
 # Global variables.
 
 samweb_obj = None       # Initialized SAMWebClient object
 samcache = {}           # Sam query cache (samcache[dimension] = set(...)).
+token_auth = False      # Token flag.
+
+
+# Function to specify preference for token authentication.
+#
+# This function does the following actions.
+#
+# 1.  Set flag (global variable token_auth) specifying a preference for token authentication.
+# 2.  Unsets environment variable BEARER_TOKEN, if set.
+# 3.  Sets or overrides environment variable BEARER_TOKEN_FILE to point to a unique-ish file path.
+#     If a file already exists at this path, it is deleted.
+#
+# Currently, specifying a preference for token authentication only affects samweb authentication.
+# If samweb needs to be accessed (by calling function samweb()), then an internal call of
+# htgettoken is generated.  Calling this function by itself does not trigger a call of htgettoken.
+
+def use_token_auth():
+
+    # Set token flag.
+
+    global token_auth
+    token_auth = True
+
+    # Cleanse existing bearer tokens from environment.
+
+    if 'BEARER_TOKEN' in os.environ:
+        del os.environ['BEARER_TOKEN']
+
+    # Generate path of bearer token file.
+
+    tmpdir = os.environ.get('TMPDIR', '/tmp')
+    pid = os.getpid()
+    uid = os.getuid()
+    token_file_name = 'bt_project_py_%d_%d' % (uid, pid)
+    token_file_path = os.path.join(tmpdir, token_file_name)
+    os.environ['BEARER_TOKEN_FILE'] = token_file_path
+    #print('bearer token file = %s' % token_file_path)
+
+    # Done.
+
+    return
+
+
+# Function to specify preference for proxy authentication.
+# Only effect of calling this function is to reset the token flag.
+
+def use_proxy_auth():
+
+    # Reset token flag.
+
+    global token_auth
+    token_auth = False
+
+    # Done.
+
+    return
 
 
 # Like os.path.isdir, but faster by avoiding unnecessary i/o.
@@ -258,9 +303,46 @@ def create_limited_dataset(defname, run, subruns):
 def samweb():
 
     global samweb_obj
+    global token_auth
+
+    # Don't do anything if samweb_obj is already initialized.
 
     if samweb_obj == None:
-        samweb_obj = samweb_cli.SAMWebClient(experiment=get_experiment())
+
+        # Do we want token or proxy authentication?
+
+        if token_auth:
+
+            # Get bearer token.  May call htgettoken.
+
+            test_token()
+
+            # Get samweb object.
+            # Requres sam_web_client v3_3 or later (will raise exception otherwise).
+
+            samweb_obj = samweb_cli.SAMWebClient(experiment=get_experiment(),
+                                                 disable_token_auth = False)
+
+        else:
+
+            # Don't use token authentication.
+
+            test_kca()
+
+            # Following block will work with either sam_web_client v3_3 or v3_0.
+
+            try:
+                samweb_obj = samweb_cli.SAMWebClient(experiment=get_experiment(),
+                                                     disable_token_auth = True)
+            except TypeError:
+                samweb_obj = None
+
+            # Try without "disable_token_auth" argument.
+
+            if samweb_obj == None:
+                samweb_obj = samweb_cli.SAMWebClient(experiment=get_experiment())
+
+    # Not sure if this is still necessary.
 
     os.environ['SSL_CERT_DIR'] = '/etc/grid-security/certificates'
 
@@ -636,14 +718,6 @@ def path_to_url(path):
 
 def path_to_local(path):
     return path
-
-# Class SafeTFile is retired.  For compatibility, calls to the former 
-# constructor of class SafeTFile are now simply passed to the ROOT
-# TFile open method.  Note that class SafeTFile only ever supported
-# opening root files for reading.
-
-def SafeTFile(path):
-    return ROOT.TFile.Open(path)
 
 # Expand "defname:" clauses in a sam dimension.
 

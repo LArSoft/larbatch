@@ -31,8 +31,10 @@
 # test_ticket - Raise an exception of user does not have a valid kerberos ticket.
 # get_kca - Get a kca certificate.
 # get_proxy - Get a grid proxy.
+# get_token - Get a bearer token by calling htgettoken.
 # test_kca - Get a kca certificate if necessary.
 # text_proxy - Get a grid proxy if necessary.
+# test_token - Get bearer token if necessary.
 # get_experiment - Get standard experiment name.
 # get_user - Get authenticated user.
 # get_prouser - Get production user.
@@ -84,6 +86,7 @@ from project_modules.ifdherror import IFDHError
 ticket_ok = False
 kca_ok = False
 proxy_ok = False
+token_ok = False
 kca_user = ''
 jobsub_ok = False
 
@@ -625,6 +628,36 @@ def get_proxy():
     return proxy_ok
 
 
+# Get a bearer token by calling htgettoken.
+
+def get_token():
+    global token_ok
+    token_ok = False
+
+    # Construct htgettoken command.
+
+    role = get_role().lower()
+    cmd = ['htgettoken',
+           '-a',
+           'htvaultprod.fnal.gov',
+           '-i',
+           get_experiment()]
+    if role == 'production':
+        cmd.extend(['-r', role])
+
+    # Run command.
+
+    try:
+        subprocess.check_call(cmd)
+        token_ok = True
+    except:
+        token_ok = False
+
+    # Done.
+
+    return token_ok
+
+
 # Test whether user has a valid kca certificate.  If not, try to get a new one.
 
 def test_kca():
@@ -704,6 +737,19 @@ def test_proxy():
         except:
             raise RuntimeError('Please get a grid proxy.')
     return proxy_ok
+
+
+# Test whether user has a valid bearer token.  If not, try to get a new one.
+
+def test_token():
+    global token_ok
+    if not token_ok:
+        get_token()
+
+    # Done.
+
+    return token_ok
+
 
 # Test whether jobsub_client has been set up.
 

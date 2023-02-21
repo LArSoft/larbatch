@@ -11,6 +11,11 @@
 #
 # project.py <options>
 #
+# Authentication options.
+#
+# --token             - Prefer token authentication.
+# --proxy             - Prefer x509 cert/proxy authentication (default).
+#
 # Project options:
 #
 # --xml <-|file|url>  - Xml file containing project description.
@@ -482,7 +487,7 @@ try:
 except ImportError:
     import Queue as queue
 from xml.dom.minidom import parse
-import project_utilities, root_metadata
+import project_utilities
 from project_modules.projectdef import ProjectDef
 from project_modules.projectstatus import ProjectStatus
 from project_modules.batchstatus import BatchStatus
@@ -2852,8 +2857,8 @@ def dojobsub(project, stage, makeup, recur, dryrun):
         jobout = convert_str(jobout)
         joberr = convert_str(joberr)
         rc = jobinfo.poll()
-        helper_path = jobout.splitlines()[0].strip()
         if rc == 0:
+            helper_path = jobout.splitlines()[0].strip()
             work_helper = os.path.join(tmpworkdir, helper)
             if helper_path != work_helper:
                 larbatch_posix.copy(helper_path, work_helper)
@@ -2883,8 +2888,8 @@ def dojobsub(project, stage, makeup, recur, dryrun):
         jobout = convert_str(jobout)
         joberr = convert_str(joberr)
         rc = jobinfo.poll()
-        helper_path = jobout.splitlines()[-1].strip()
         if rc == 0:
+            helper_path = jobout.splitlines()[-1].strip()
             #print 'helper_path = %s' % helper_path
             work_helper = os.path.join(tmpworkdir, os.path.basename(helper_path))
             if helper_path != work_helper:
@@ -3961,6 +3966,7 @@ def main(argv):
 
     # Parse arguments.
 
+    use_token = 0
     xmlfile = ''
     projectname = ''
     stagenames = ['']
@@ -4035,6 +4041,12 @@ def main(argv):
         elif args[0] == '-xh' or args[0] == '--xmlhelp' :
             xmlhelp()
             return 0
+        elif args[0] == '--token':
+            use_token = 1
+            del args[0]
+        elif args[0] == '--proxy':
+            use_token = 0
+            del args[0]
         elif args[0] == '--xml' and len(args) > 1:
             xmlfile = args[1]
             del args[0:2]
@@ -4232,6 +4244,13 @@ def main(argv):
         else:
             print('Unknown option %s' % args[0])
             return 1
+
+    # Specify authentication method.
+
+    if use_token != 0:
+        project_utilities.use_token_auth()
+    else:
+        project_utilities.use_proxy_auth()
 
     # Normalize xml file path.
 
