@@ -44,6 +44,9 @@ class ProjectDef:
         self.cpu = 0                      # Number of cpus.
         self.disk = ''                    # Disk space (string value+unit).
         self.memory = 0                   # Amount of memory (integer MB).
+        self.nthreads = 1                 # Number of threads.
+        self.nschedules = 1               # Number of art schedules.
+        self.args = []                    # Extra lar arguments.
         self.merge = 'hadd -T'            # histogram merging program.
         self.anamerge = ''                # Analysis merge flag.
         self.release_tag = ''             # Larsoft release tag.
@@ -184,6 +187,27 @@ class ProjectDef:
         for memory_element in memory_elements:
             if memory_element.parentNode == project_element:
                 self.memory = int(memory_element.firstChild.data)
+
+        # Number of threads (subelement).
+
+        thread_counts = project_element.getElementsByTagName('nthreads')
+        for thread_count in thread_counts:
+            if thread_count.parentNode == project_element:
+                self.nthreads = int(thread_count.firstChild.data)    
+
+        # Number of schedules (subelement).
+
+        schedule_counts = project_element.getElementsByTagName('nschedules')
+        for schedule_count in schedule_counts:
+            if schedule_count.parentNode == project_element:
+                self.nschedules = int(schedule_count.firstChild.data)    
+
+        # Extra lar arguments.
+
+        argses = project_element.getElementsByTagName('args')
+        for args in argses:
+            if args.parentNode == project_element:
+                self.args = str(args.firstChild.data).split()
 
         # merge (subelement).
         
@@ -429,6 +453,9 @@ class ProjectDef:
                                         self.cpu,
                                         self.disk,
                                         self.memory,
+                                        self.nthreads,
+                                        self.nschedules,
+                                        self.args,
                                         self.validate_on_worker,
                                         self.copy_to_fts,
                                         self.cvmfs,
@@ -476,6 +503,9 @@ class ProjectDef:
         result += 'Cpu = %d\n' % self.cpu
         result += 'Disk = %s\n' % self.disk
         result += 'Memory = %d MB\n' % self.memory
+        result += 'Number of threads = %d\n' % self.nthreads
+        result += 'Number of schedules = %d\n' % self.nschedules
+        result += 'Extra arguments = %s\n' % str(self.args)
         result += 'Histogram merging program = %s\n' % self.merge
         result += 'Analysis merge flag = %s\n' % self.anamerge
         result += 'Larsoft release tag = %s\n' % self.release_tag

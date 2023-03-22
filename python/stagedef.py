@@ -37,7 +37,8 @@ class StageDef:
     def __init__(self, stage_element, base_stage, default_input_lists, default_previous_stage, 
                  default_num_jobs, default_num_events, default_max_files_per_job, default_merge,
                  default_anamerge,
-                 default_cpu, default_disk, default_memory, default_validate_on_worker,
+                 default_cpu, default_disk, default_memory, default_nthreads, default_nschedules,
+                 default_args, default_validate_on_worker,
                  default_copy_to_fts, default_cvmfs, default_stash, default_singularity,
                  default_script, default_start_script, default_stop_script,
                  default_site, default_blacklist, check=True):
@@ -112,6 +113,9 @@ class StageDef:
             self.disk = base_stage.disk
             self.datafiletypes = base_stage.datafiletypes
             self.memory = base_stage.memory
+            self.nthreads = base_stage.nthreads
+            self.nschedules = base_stage.nschedules
+            self.args = base_stage.args
             self.parameters = base_stage.parameters
             self.output = base_stage.output
             self.TFileName = base_stage.TFileName
@@ -196,6 +200,9 @@ class StageDef:
             self.disk = default_disk     # Disk space (string value+unit).
             self.datafiletypes = ["root"] # Data file types.
             self.memory = default_memory # Amount of memory (integer MB).
+            self.nthreads = default_nthreads # Number of threads (integer).
+            self.nschedules = default_nschedules # Number of schedules (integer).
+            self.args = default_args # Extra lar arguments (list of strings).
             self.parameters = {}   # Dictionary of metadata parameters.
             self.output = []       # Art output file names.
             self.TFileName = ''    # TFile output file name.
@@ -881,6 +888,24 @@ class StageDef:
         if memory_elements:
             self.memory = int(memory_elements[0].firstChild.data)
 
+        # Number of threads (subelement).
+
+        thread_counts = stage_element.getElementsByTagName('nthreads')
+        if thread_counts:
+            self.nthreads = int(thread_counts[0].firstChild.data)
+
+        # Number of schedules (subelement).
+
+        schedule_counts = stage_element.getElementsByTagName('nschedules')
+        if schedule_counts:
+            self.nschedules = int(schedule_counts[0].firstChild.data)
+
+        # Extra lar arguments (subelement).
+
+        argses = stage_element.getElementsByTagName('args')
+        if argses:
+            self.args = str(argses[0].firstChild.data).split()
+
         # Dictionary of metadata parameters (repeatable subelement).
 
         param_elements = stage_element.getElementsByTagName('parameter')
@@ -1201,6 +1226,9 @@ class StageDef:
         result += 'Disk = %s\n' % self.disk
         result += 'Datafiletypes = %s\n' % self.datafiletypes
         result += 'Memory = %d MB\n' % self.memory
+        result += 'Number of threads = %d\n' % self.nthreads
+        result += 'Number of schedules = %d\n' % self.nschedules
+        result += 'Extra arguments = %s\n' % str(self.args)
         result += 'Metadata parameters:\n'
         for key in self.parameters:
             result += '%s: %s\n' % (key,self.parameters[key])
