@@ -178,6 +178,9 @@
 # <disk>    - Amount of scratch disk space (jobsub_submit --disk=...).
 #             Specify value and unit (e.g. 50GB).
 # <memory>  - Specify amount of memory in MB (jobsub_submit --memory=...).
+# <nthreads> - Specify number of threads.
+# <nschedules> - Specify number of art schedules.
+# <args>    - Specify extra lar arguments.
 #
 # <script>  - Name of batch worker script (default condor_lar.sh).
 #             The batch script must be on the execution path.
@@ -378,6 +381,9 @@
 # <stage><disk>    - Amount of scratch disk space (jobsub_submit --disk=...).
 #                    Specify value and unit (e.g. 50GB).
 # <stage><memory>  - Specify amount of memory in MB (jobsub_submit --memory=...).
+# <stage><nthreads> - Specify number of threads.
+# <stage><nschedules> - Specify number of art schedules.
+# <stage><args>    - Specify extra lar arguments.
 # <stage><script>  - Name of batch worker script (default condor_lar.sh).
 #                    The batch script must be on the execution path.
 # <stage><startscript> - Name of batch worker start project script (default condor_start_project.sh)
@@ -3287,6 +3293,11 @@ def dojobsub(project, stage, makeup, recur, dryrun):
     if stage.copy_to_fts == 1:
       command.extend([' --copy'])
 
+    if stage.nthreads > 1:
+      command.extend([' --nthreads', '%d' % stage.nthreads])
+    if stage.nschedules > 1:
+      command.extend([' --nschedules', '%d' % stage.nschedules])
+
     # If input is from sam, also construct a dag file, or add --sam_start option.
 
     if (prjname != '' or mixprjname != '') and command_njobs == 1 and not project.force_dag and not prj_started:
@@ -3294,6 +3305,11 @@ def dojobsub(project, stage, makeup, recur, dryrun):
                         ' --sam_station', project_utilities.get_experiment(),
                         ' --sam_group', project_utilities.get_experiment()])
 
+    # Extra lar arguments (has to come at end of batch command).
+
+    if len(stage.args) > 0:
+        command.append(' --args')
+        command.extend(stage.args)
 
     # At this point, the main batch worker command is complete.
     # Decide whether to submit this command stand alone or as part of a dag.
