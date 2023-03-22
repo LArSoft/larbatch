@@ -21,6 +21,8 @@
 # --nfile <arg>           - Number of files to process per worker.
 # --nfile_skip <arg>      - Number of files to skip (use with option -S).
 # --inputmode <arg>       - Input mode ('textfile' or '', default '')
+# --nthreads <arg>        - Number of threads (lar option --nthreads).
+# --nschedules <arg>      - Number of schedules (lar option --nschedules).
 # --args <args...>        - Arguments for lar command line (place at end).
 #
 # Sam and parallel project options.
@@ -214,6 +216,8 @@ SUBRUN=1
 NFILE=0
 NFILE_SKIP=0
 NJOBS=1
+NTHREADS=1
+NSCHEDULES=1
 ARGS=""
 UPS_PRDS=""
 REL=""
@@ -350,6 +354,22 @@ while [ $# -gt 0 ]; do
     --njobs )
       if [ $# -gt 1 ]; then
         NJOBS=$2
+        shift
+      fi
+      ;;
+
+    # Number of threads.
+    --nthreads )
+      if [ $# -gt 1 ]; then
+        NTHREADS=$2
+        shift
+      fi
+      ;;
+
+    # Number of schedules.
+    --nschedules )
+      if [ $# -gt 1 ]; then
+        NSCHEDULES=$2
         shift
       fi
       ;;
@@ -1653,6 +1673,14 @@ EOF
 
   if [ $NSKIP -ne 0 ]; then
     LAROPT="$LAROPT --nskip $NSKIP"
+  fi
+
+  if [ $NTHREADS -gt 1 ]; then
+    LAROPT="$LAROPT --nthreads $NTHREADS"
+  fi
+
+  if [ $NSCHEDULES -gt 1 ]; then
+    LAROPT="$LAROPT --nschedules $NSCHEDULES"
   fi
 
   if [ x$PURL != x -a $stage -eq 0 ]; then
