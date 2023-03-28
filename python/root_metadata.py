@@ -56,53 +56,13 @@ def fileEnstoreChecksum(path):
     """Calculate enstore compatible CRC value"""
 
     crc = {}
-    srm_url = project_utilities.path_to_srm_url(path)
-
-    if srm_url == path:
-        try:
-            f = larbatch_posix.open(path,'rb')
-            crc = enstoreChecksum(f)
-        except (IOError, OSError) as ex:
-            raise Error(str(ex))
-        finally:
-            f.close()
-    else:
-        try:
-            # Following commented commands are old way of calculating checksum by
-            # transferring entire file over network.
-            # Should work again if uncommented (if srm way breaks).
-
-            #cmd = ['ifdh', 'cp', path, '/dev/fd/1']
-            #p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            #f = p.stdout
-            #crc = enstoreChecksum(f)
-
-            # New (clever, efficient, obscure...) way of accessing dCache 
-            # stored checksum using srm.
-            project_utilities.test_proxy()
-            cmd = ['srmls', '-2', '-l', srm_url]
-            srmout = convert_str(subprocess.check_output(cmd))
-            first = True
-            crc0 = 0
-            for line in srmout.split('\n'):
-                if first:
-                    size = int(line[2:line.find('/')-1])
-                    first = False
-                    continue
-                if line.find("Checksum value:") > 0:
-                    ssum = line[line.find(':') + 2:]
-                    crc1 = int( ssum , base = 16 )
-                    crc0 = convert_1_adler32_to_0_adler32(crc1, size)
-                    break
-
-            crc = {"crc_value": str(crc0), "crc_type": "adler 32 crc type"}
-            
-        except:
-            # Try the old method
-            cmd = ['ifdh', 'cp', path, '/dev/fd/1']
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            f = p.stdout
-            crc = enstoreChecksum(f)
+    try:
+        f = larbatch_posix.open(path,'rb')
+        crc = enstoreChecksum(f)
+    except (IOError, OSError) as ex:
+        raise Error(str(ex))
+    finally:
+        f.close()
     return crc
 
 def get_external_metadata(inputfile):
