@@ -15,7 +15,7 @@
 # Notes:
 #
 # 1.  Pnfs paths are converted to an xrootd url as
-#     /pnfs/... -> root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/...
+#     /pnfs/... -> root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/...
 #
 # 2.  Other paths (including local and bluearc) are left unchanged.
 #
@@ -57,7 +57,7 @@ while [ $# -gt 0 ]; do
       else
         cat $list | while read file
         do
-          echo $file | sed 's;^/pnfs/;root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/;'
+          echo $file | sed 's;^/pnfs/;root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/;'
           nfile=$(( $nfile + 1 ))
         done
       fi
@@ -67,7 +67,7 @@ while [ $# -gt 0 ]; do
 
     * )
       file=$1
-      echo $file | sed 's;^/pnfs/;root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/;'
+      echo $file | sed 's;^/pnfs/;root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/;'
       nfile=$(( $nfile + 1 ))
     ;;
   esac
@@ -79,7 +79,7 @@ done
 if [ $nfile -eq 0 ]; then
   while read file
   do
-    echo $file | sed 's;^/pnfs/;root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/;'
+    echo $file | sed 's;^/pnfs/;root://fndcadoor.fnal.gov:1094/pnfs/fnal.gov/usr/;'
     nfile=$(( $nfile + 1 ))
   done
 fi

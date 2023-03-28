@@ -695,9 +695,6 @@ def batch_status_check():
 # The actual implementations have been moved to larbatch_posix or 
 # larbatch_utilities, with a different name.
 
-def path_to_srm_url(path):
-    return larbatch_utilities.srm_uri(path)
-
 def safeexist(path):
     return larbatch_posix.exists(path)
 
