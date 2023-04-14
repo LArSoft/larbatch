@@ -2419,20 +2419,8 @@ def docheck_locations(dim, outdir, add, clean, remove, upload):
                     # Copy file to dropbox.
 
                     loc_filename = os.path.join(loc, filename)
-
-                    # Decide whether to use a symlink or copy.
-
-                    if project_utilities.mountpoint(loc_filename) == \
-                            project_utilities.mountpoint(dropbox_filename):
-                        print('Symlinking %s to dropbox directory %s.' % (filename, dropbox))
-                        relpath = os.path.relpath(os.path.realpath(loc_filename), dropbox)
-                        print('relpath=',relpath)
-                        print('dropbox_filename=',dropbox_filename)
-                        larbatch_posix.symlink(relpath, dropbox_filename)
-
-                    else:
-                        print('Copying %s to dropbox directory %s.' % (filename, dropbox))
-                        larbatch_posix.copy(loc_filename, dropbox_filename)
+                    print('Copying %s to dropbox directory %s.' % (filename, dropbox))
+                    larbatch_posix.copy(loc_filename, dropbox_filename)
 
     return 0
 
