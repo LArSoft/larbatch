@@ -15,6 +15,8 @@
 # --maintain_parentage <0/1> - If true, override default parentage according to
 #                              env variables JOBS_PARENTS and JOBS_AUNTS.
 # --data_file_type - Specify data file type (repeatable, default "root").
+# --parents <file> - File containing parent files (same as $JOBS_PARENTS).
+# --aunts <file>   - File containing aunt files (same as $JOBS_AUNTS).
 #
 # Environment variables:
 #
@@ -170,6 +172,8 @@ def main():
     copy_to_dropbox = 0
     maintain_parentage = 0
     data_file_types = []
+    parents_file = ''
+    aunts_file = ''
     args = sys.argv[1:]
     while len(args) > 0:
 
@@ -194,6 +198,12 @@ def main():
         elif args[0] == '--data_file_type' and len(args) > 1:
             data_file_types.append(args[1])
             del args[0:2]        
+        elif args[0] == '--parents' and len(args) > 1:
+            parents_file = args[1]
+            del args[0:2]
+        elif args[0] == '--aunts' and len(args) > 1:
+            aunts_file = args[1]
+            del args[0:2]
         else:
             print('Unknown option %s' % args[0])
             return 1
@@ -361,16 +371,30 @@ def main():
 
                         # change the parentage of the file based on it's parents and aunts from condor_lar
 
-                        jobs_parents = os.getenv('JOBS_PARENTS', '').split(" ")
-                        jobs_aunts   = os.getenv('JOBS_AUNTS', '').split(" ")
-                        if(jobs_parents[0] != '' ):
-                            md['parents'] = [{'file_name': parent} for parent in jobs_parents]
-                        if(jobs_aunts[0] != '' ):
-                            for aunt in jobs_aunts:
-                                mixparent_dict = {'file_name': aunt}
-                                if 'parents' not in md:
-                                    md['parents'] = []
-                                md['parents'].append(mixparent_dict)
+                        if parents_file != '':
+                            md['parents'] = []
+                            pf = open(parents_file)
+                            for line in pf.readlines():
+                                md['parents'].append({'file_name': line.strip()})
+                            pf.close()
+                        else:
+                            jobs_parents = os.getenv('JOBS_PARENTS', '').split(" ")
+                            if(jobs_parents[0] != '' ):
+                                md['parents'] = [{'file_name': parent} for parent in jobs_parents]
+
+                        if aunts_file != '':
+                            af = open(aunts_file)
+                            for line in af.readlines():
+                                md['parents'].append({'file_name': line.strip()})
+                            af.close()
+                        else:
+                            jobs_aunts   = os.getenv('JOBS_AUNTS', '').split(" ")
+                            if(jobs_aunts[0] != '' ):
+                                for aunt in jobs_aunts:
+                                    mixparent_dict = {'file_name': aunt}
+                                    if 'parents' not in md:
+                                        md['parents'] = []
+                                    md['parents'].append(mixparent_dict)
                                              
                     if len(md) > 0:
                         project_utilities.test_kca()
@@ -380,6 +404,8 @@ def main():
       
                         try:
                             samweb.declareFile(md=md)
+                            #s = json.dumps(md, indent=2)
+                            #print(s)
                             declare_ok = True
 
                         except samweb_cli.exceptions.SAMWebHTTPError as e:
@@ -449,16 +475,30 @@ def main():
 
                         # change the parentage of the file based on it's parents and aunts from condor_lar
 
-                        jobs_parents = os.getenv('JOBS_PARENTS', '').split(" ")
-                        jobs_aunts   = os.getenv('JOBS_AUNTS', '').split(" ")
-                        if(jobs_parents[0] != '' ):
-                            md['parents'] = [{'file_name': parent} for parent in jobs_parents]
-                        if(jobs_aunts[0] != '' ):
-                            for aunt in jobs_aunts:
-                                mixparent_dict = {'file_name': aunt}
-                                if 'parents' not in md:
-                                    md['parents'] = []
-                                md['parents'].append(mixparent_dict)
+                        if parents_file != '':
+                            md['parents'] = []
+                            pf = open(parents_file)
+                            for line in pf.readlines():
+                                md['parents'].append({'file_name': line.strip()})
+                            pf.close()
+                        else:
+                            jobs_parents = os.getenv('JOBS_PARENTS', '').split(" ")
+                            if(jobs_parents[0] != '' ):
+                                md['parents'] = [{'file_name': parent} for parent in jobs_parents]
+
+                        if aunts_file != '':
+                            af = open(aunts_file)
+                            for line in af.readlines():
+                                md['parents'].append({'file_name': line.strip()})
+                            af.close()
+                        else:
+                            jobs_aunts   = os.getenv('JOBS_AUNTS', '').split(" ")
+                            if(jobs_aunts[0] != '' ):
+                                for aunt in jobs_aunts:
+                                    mixparent_dict = {'file_name': aunt}
+                                    if 'parents' not in md:
+                                        md['parents'] = []
+                                    md['parents'].append(mixparent_dict)
                                              
                     if len(md) > 0 and 'file_type' in md:
                         project_utilities.test_kca()
@@ -468,6 +508,8 @@ def main():
       
                         try:
                             samweb.declareFile(md=md)
+                            #s = json.dumps(md, indent=2)
+                            #print(s)
                             declare_ok = True
              
                         except samweb_cli.exceptions.SAMWebHTTPError as e:
