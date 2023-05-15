@@ -2068,32 +2068,28 @@ export IFDH_CP_MAXRETRIES=5
 
 echo "Make directory ${LOGDIR}/${OUTPUT_SUBDIR}."
 date
-subdir=$OUTPUT_SUBDIR
-dir=$LOGDIR
-while echo $subdir | grep -q /; do
-  dir=${dir}/${subdir%%/*}
-  subdir=${subdir#*/}
-  echo "ifdh mkdir $IFDH_OPT $dir"
-  ifdh mkdir $IFDH_OPT $dir
-done
-echo "ifdh mkdir $IFDH_OPT ${LOGDIR}/$OUTPUT_SUBDIR"
-ifdh mkdir $IFDH_OPT ${LOGDIR}/$OUTPUT_SUBDIR
+echo "ifdh mkdir_p $IFDH_OPT ${LOGDIR}/$OUTPUT_SUBDIR"
+ifdh mkdir_p $IFDH_OPT ${LOGDIR}/$OUTPUT_SUBDIR 2> err.txt
+stat=$?
+if [ $stat -ne 0 ]; then
+  echo "ifdh command returned status $stat"
+  cat err.txt
+fi
+rm -f err.txt
 echo "Done making directory ${LOGDIR}/${OUTPUT_SUBDIR}."
 date
 
 if [ ${OUTDIR} != ${LOGDIR} ]; then
   echo "Make directory ${OUTDIR}/${OUTPUT_SUBDIR}."
   date
-  subdir=$OUTPUT_SUBDIR
-  dir=$OUTDIR
-  while echo $subdir | grep -q /; do
-    dir=${dir}/${subdir%%/*}
-    subdir=${subdir#*/}
-    echo "ifdh mkdir $IFDH_OPT $dir"
-    ifdh mkdir $IFDH_OPT $dir
-  done
-  echo "ifdh mkdir $IFDH_OPT ${OUTDIR}/$OUTPUT_SUBDIR"
-  ifdh mkdir $IFDH_OPT ${OUTDIR}/$OUTPUT_SUBDIR
+  echo "ifdh mkdir_p $IFDH_OPT ${OUTDIR}/$OUTPUT_SUBDIR"
+  ifdh mkdir_p $IFDH_OPT ${OUTDIR}/$OUTPUT_SUBDIR 2> err.txt
+  stat=$?
+  if [ $stat -ne 0 ]; then
+    echo "ifdh command returned status $stat"
+    cat err.txt
+  fi
+  rm -f err.txt
   echo "Done making directory ${OUTDIR}/${OUTPUT_SUBDIR}."
   date
 fi
