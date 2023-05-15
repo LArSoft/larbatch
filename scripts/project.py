@@ -3035,23 +3035,24 @@ def dojobsub(project, stage, makeup, recur, dryrun):
 
     # Calculate the checksum of the tarball.
 
-    hasher = hashlib.md5()
-    f = open(tmptar, 'rb')
-    buf = f.read(1024)
-    while len(buf) > 0:
-        hasher.update(buf)
-        buf = f.read(1024)
-    hash = hasher.hexdigest()
-    f.close()
+    #hasher = hashlib.md5()
+    #f = open(tmptar, 'rb')
+    #buf = f.read(1024)
+    #while len(buf) > 0:
+    #    hasher.update(buf)
+    #    buf = f.read(1024)
+    #hash = hasher.hexdigest()
+    #f.close()
 
     # Transfer tarball to work directory.
     # Give the tarball a unique name based on its checksum.
     # Don't replace the tarball if it already exists.
 
-    hashtar = '%s/work%s.tar' % (stage.workdir, hash)
-    if not larbatch_posix.exists(hashtar):
-        larbatch_posix.copy(tmptar, hashtar)
-    jobsub_workdir_files_args.extend(['-f', hashtar])
+    #hashtar = '%s/work%s.tar' % (stage.workdir, hash)
+    #if not larbatch_posix.exists(hashtar):
+    #    larbatch_posix.copy(tmptar, hashtar)
+    #jobsub_workdir_files_args.extend(['-f', hashtar])
+    jobsub_workdir_files_args.extend(['--tar_file_name', 'dropbox://%s' % tmptar])
 
     # Sam stuff.
 

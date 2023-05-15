@@ -195,7 +195,7 @@
 #    which path must be visible from the batch worker (e.g. /cvmfs/...).
 #    If this option is not specified, this script will look for and source
 #    a script with hardwired name "setup_experiment.sh" in directory
-#    ${CONDIR_DIR_INPUT}.
+#    ${CONDOR_DIR_INPUT}.
 #
 #
 # Created: H. Greenlee, 29-Aug-2012
@@ -880,7 +880,7 @@ echo "Scratch directory: $TMP"
 echo "No longer fetching files from work directory."
 echo "that's now done with using jobsub -f commands"
 mkdir work
-cp ${CONDOR_DIR_INPUT}/* ./work/
+find $CONDOR_DIR_INPUT -follow -type f -exec cp {} work \;
 cd work
 find . -name \*.tar -exec tar xf {} \;
 find . -name \*.py -exec chmod +x {} \;
