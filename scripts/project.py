@@ -3022,10 +3022,11 @@ def dojobsub(project, stage, makeup, recur, dryrun):
 
     # Make a tarball out of all of the files in tmpworkdir in stage.workdir
 
-    tmptar = '%s/work.tar' % tmpworkdir
+    tarname = 'work%s.tar' % uuid.uuid4()
+    tmptar = '%s/%s' % (tmpworkdir, tarname)
     jobinfo = subprocess.Popen(['tar','-cf', tmptar, '-C', tmpworkdir,
                                 '--mtime=2018-01-01',
-                                '--exclude=work.tar', '.'],
+                                '--exclude=%s' % tarname, '.'],
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
     jobout, joberr = jobinfo.communicate()
