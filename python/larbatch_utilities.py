@@ -16,6 +16,7 @@
 # ifdh_ls - Interface for "ifdh ls."
 # ifdh_ll - Interface for "ifdh ll."
 # ifdh_mkdir - Interface for "ifdh mkdir."
+# ifdh_mkdir_p - Interface for "ifdh mkdir_p."
 # ifdh_rmdir - Interface for "ifdh rmdir."
 # ifdh_mv - Interface for "ifdh mv."
 # ifdh_rm - Interface for "ifdh rm."
@@ -257,6 +258,54 @@ def ifdh_mkdir(path):
     thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
     thread.start()
     thread.join(timeout=60)
+    if thread.is_alive():
+        print('Terminating subprocess.')
+        jobinfo.terminate()
+        thread.join()
+    rc = q.get()
+    jobout = convert_str(q.get())
+    joberr = convert_str(q.get())
+    if rc != 0:
+        for var in list(save_vars.keys()):
+            os.environ[var] = save_vars[var]
+        raise IFDHError(cmd, rc, jobout, joberr)
+
+    # Restore environment variables.
+
+    for var in list(save_vars.keys()):
+        os.environ[var] = save_vars[var]
+
+    # Done.
+
+    return
+
+
+# Ifdh mkdir_p, with timeout.
+
+def ifdh_mkdir_p(path):
+
+    # Get proxy.
+
+    test_proxy()
+
+    # Make sure environment variables X509_USER_CERT and X509_USER_KEY
+    # are not defined (they confuse ifdh, or rather the underlying tools).
+
+    save_vars = {}
+    for var in ('X509_USER_CERT', 'X509_USER_KEY'):
+        if var in os.environ:
+            save_vars[var] = os.environ[var]
+            del os.environ[var]
+
+    # Do mkdir_p.
+
+    cmd = ['ifdh', 'mkdir_p', path]
+    jobinfo = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    q = queue.Queue()
+    thread = threading.Thread(target=wait_for_subprocess, args=[jobinfo, q])
+    thread.start()
+    thread.join(timeout=600)
     if thread.is_alive():
         print('Terminating subprocess.')
         jobinfo.terminate()

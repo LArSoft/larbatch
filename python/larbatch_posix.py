@@ -660,16 +660,9 @@ def makedirs(path, mode=0o777):
         if debug:
             print('*** Larbatch_posix: Make directory recursively for %s using ifdh.' % path)
 
-        # Make sure parent directory exists.
+        # Make directory.
 
-        np = os.path.normpath(path)    # Stip trailing '/', if present.
-        parent = os.path.dirname(np)
-        if not isdir(parent):
-            makedirs(parent, mode)
-
-        # Now make directory itself.
-
-        larbatch_utilities.ifdh_mkdir(path)
+        larbatch_utilities.ifdh_mkdir_p(path)
     else:
         if debug:
             print('*** Larbatch_posix: Make directory recursively for %s using posix.' % path)

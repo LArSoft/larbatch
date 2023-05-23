@@ -2419,20 +2419,8 @@ def docheck_locations(dim, outdir, add, clean, remove, upload):
                     # Copy file to dropbox.
 
                     loc_filename = os.path.join(loc, filename)
-
-                    # Decide whether to use a symlink or copy.
-
-                    if project_utilities.mountpoint(loc_filename) == \
-                            project_utilities.mountpoint(dropbox_filename):
-                        print('Symlinking %s to dropbox directory %s.' % (filename, dropbox))
-                        relpath = os.path.relpath(os.path.realpath(loc_filename), dropbox)
-                        print('relpath=',relpath)
-                        print('dropbox_filename=',dropbox_filename)
-                        larbatch_posix.symlink(relpath, dropbox_filename)
-
-                    else:
-                        print('Copying %s to dropbox directory %s.' % (filename, dropbox))
-                        larbatch_posix.copy(loc_filename, dropbox_filename)
+                    print('Copying %s to dropbox directory %s.' % (filename, dropbox))
+                    larbatch_posix.copy(loc_filename, dropbox_filename)
 
     return 0
 
@@ -3034,10 +3022,11 @@ def dojobsub(project, stage, makeup, recur, dryrun):
 
     # Make a tarball out of all of the files in tmpworkdir in stage.workdir
 
-    tmptar = '%s/work.tar' % tmpworkdir
+    tarname = 'work%s.tar' % uuid.uuid4()
+    tmptar = '%s/%s' % (tmpworkdir, tarname)
     jobinfo = subprocess.Popen(['tar','-cf', tmptar, '-C', tmpworkdir,
                                 '--mtime=2018-01-01',
-                                '--exclude=work.tar', '.'],
+                                '--exclude=%s' % tarname, '.'],
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
     jobout, joberr = jobinfo.communicate()
@@ -3047,23 +3036,24 @@ def dojobsub(project, stage, makeup, recur, dryrun):
 
     # Calculate the checksum of the tarball.
 
-    hasher = hashlib.md5()
-    f = open(tmptar, 'rb')
-    buf = f.read(1024)
-    while len(buf) > 0:
-        hasher.update(buf)
-        buf = f.read(1024)
-    hash = hasher.hexdigest()
-    f.close()
+    #hasher = hashlib.md5()
+    #f = open(tmptar, 'rb')
+    #buf = f.read(1024)
+    #while len(buf) > 0:
+    #    hasher.update(buf)
+    #    buf = f.read(1024)
+    #hash = hasher.hexdigest()
+    #f.close()
 
     # Transfer tarball to work directory.
     # Give the tarball a unique name based on its checksum.
     # Don't replace the tarball if it already exists.
 
-    hashtar = '%s/work%s.tar' % (stage.workdir, hash)
-    if not larbatch_posix.exists(hashtar):
-        larbatch_posix.copy(tmptar, hashtar)
-    jobsub_workdir_files_args.extend(['-f', hashtar])
+    #hashtar = '%s/work%s.tar' % (stage.workdir, hash)
+    #if not larbatch_posix.exists(hashtar):
+    #    larbatch_posix.copy(tmptar, hashtar)
+    #jobsub_workdir_files_args.extend(['-f', hashtar])
+    jobsub_workdir_files_args.extend(['--tar_file_name', 'dropbox://%s' % tmptar])
 
     # Sam stuff.
 
