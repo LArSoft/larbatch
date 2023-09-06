@@ -74,6 +74,8 @@
 # --undefine   - Delete sam dataset definition.
 # --audit      - compare input files to output files and look for extra
 #                or misssing files and take subsequent action
+# --retain     - When combined with --submit or --makeup, don't delete temporary files after
+#                submitting.  Temporary files include the job submission dag and work tarball.
 #
 # --declare_ana          - Declare analysis files to sam.
 # --add_locations_ana    - Check sam analysis file disk locations and add missing ones.
@@ -2478,7 +2480,7 @@ def docheck_tape(dim):
 # Return jobsubid.
 # Raise exception if jobsub_submit returns a nonzero status.
 
-def dojobsub(project, stage, makeup, recur, dryrun):
+def dojobsub(project, stage, makeup, recur, dryrun, retain):
 
     # Default return.
 
@@ -3579,9 +3581,15 @@ def dojobsub(project, stage, makeup, recur, dryrun):
             if larbatch_posix.exists(checked_file):
                 larbatch_posix.remove(checked_file)
             if larbatch_posix.isdir(tmpdir):
-                larbatch_posix.rmtree(tmpdir)
+                if retain:
+                    print('Retaining temporary directory: %s' % tmpdir)
+                else:
+                    larbatch_posix.rmtree(tmpdir)
             if larbatch_posix.isdir(tmpworkdir):
-                larbatch_posix.rmtree(tmpworkdir)
+                if retain:
+                    print('Retaining temporary directory: %s' % tmpworkdir)
+                else:
+                    larbatch_posix.rmtree(tmpworkdir)
             if rc != 0:
                 raise JobsubError(command, rc, jobout, joberr)
             for line in jobout.split('\n'):
@@ -3617,9 +3625,15 @@ def dojobsub(project, stage, makeup, recur, dryrun):
                 if larbatch_posix.exists(checked_file):
                     larbatch_posix.remove(checked_file)
                 if larbatch_posix.isdir(tmpdir):
-                    larbatch_posix.rmtree(tmpdir)
+                    if retain:
+                        print('Retaining temporary directory: %s' % tmpdir)
+                    else:
+                        larbatch_posix.rmtree(tmpdir)
                 if larbatch_posix.isdir(tmpworkdir):
-                    larbatch_posix.rmtree(tmpworkdir)
+                    if retain:
+                        print('Retaining temporary directory: %s' % tmpworkdir)
+                    else:
+                        larbatch_posix.rmtree(tmpworkdir)
                 if rc != 0:
                     raise JobsubError(command, rc, jobout, joberr)
                 for line in jobout.split('\n'):
@@ -3637,7 +3651,7 @@ def dojobsub(project, stage, makeup, recur, dryrun):
 
 # Submit/makeup action.
 
-def dosubmit(project, stage, makeup=False, recur=False, dryrun=False):
+def dosubmit(project, stage, makeup=False, recur=False, dryrun=False, retain=False):
 
     # Make sure we have a kerberos ticket.
 
@@ -3694,7 +3708,7 @@ def dosubmit(project, stage, makeup=False, recur=False, dryrun=False):
 
     # Copy files to workdir and issue jobsub command to submit jobs.
 
-    jobid = dojobsub(project, stage, makeup, recur, dryrun)
+    jobid = dojobsub(project, stage, makeup, recur, dryrun, retain)
 
     # Append jobid to file "jobids.list" in the log directory.
 
@@ -3996,6 +4010,7 @@ def main(argv):
     mergehist = 0
     mergentuple = 0
     audit = 0
+    retain = 0
     stage_status = 0
     makeup = 0
     clean = 0
@@ -4120,6 +4135,9 @@ def main(argv):
             del args[0]
         elif args[0] == '--audit':
             audit = 1
+            del args[0]
+        elif args[0] == '--retain':
+            retain = 1
             del args[0]
         elif args[0] == '--status':
             stage_status = 1
@@ -4553,7 +4571,7 @@ def main(argv):
                 print('Skipping job submission because similar job submission process is running.')
             else:
                 stage = stages[stagename]
-                dosubmit(project, stage, makeup, stage.recur, dryrun)
+                dosubmit(project, stage, makeup, stage.recur, dryrun, retain)
 
     if check or checkana:
 
