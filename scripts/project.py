@@ -4467,6 +4467,15 @@ def main(argv):
                 project_utilities.test_kca()
                 samweb.createDefinition(defname=stage.inputdef, dims=dim)
 
+        # Validate project/stage.
+
+        valok = larbatch_utilities.validate_stage(project, stage)
+        if valok:
+            print('Validation checks passed.')
+        else:
+            print('Validation checks failed.')
+            print('Qutting now.')
+            sys.exit(1)
 
     # Do dump stage action now.
 

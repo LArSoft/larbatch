@@ -65,6 +65,7 @@
 # convert_str - Accepting unicode or bytes as input, convert to default python str.
 # convert_bytes - Accepting unicode or bytes as input, convert to bytes.
 # test_jobsub - Test whether jobsub_client is set up.
+# validate_stage - Validate project and stage configurations.
 #
 ######################################################################
 
@@ -825,6 +826,16 @@ def test_jobsub():
         sys.exit(1)
 
     return jobsub_ok
+
+# Function to validate project and stage configurations.
+# Return True if good, False if bad.
+# Returning false will prevent jobs from being submitted.
+# This implementation doesn't do anything.
+# Can be overridden in experiment_utilities to provide experiment-dependent validations.
+
+def validate_stage(project, stage):
+    return True
+
 
 # Return dCache server.
 
