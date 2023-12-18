@@ -34,7 +34,7 @@
 # get_proxy - Get a grid proxy.
 # get_token - Get a bearer token by calling htgettoken.
 # test_kca - Get a kca certificate if necessary.
-# text_proxy - Get a grid proxy if necessary.
+# test_proxy - Get a grid proxy if necessary.
 # test_token - Get bearer token if necessary.
 # get_experiment - Get standard experiment name.
 # get_user - Get authenticated user.
@@ -762,6 +762,10 @@ def test_kca():
 # Test whether user has a valid grid proxy.  If not, try to get a new one.
 
 def test_proxy():
+
+    if test_token():
+        return True
+
     global proxy_ok
     if not proxy_ok:
         try:
@@ -793,7 +797,17 @@ def test_proxy():
 def test_token():
     global token_ok
     if not token_ok:
-        get_token()
+
+        # Try running httokendecode.
+
+        try:
+            subprocess.check_call(['httokendecode'], stdout=-1, stderr=-1)
+            token_ok = True
+        except:
+            token_ok = False
+
+        if not token_ok:
+            get_token()
 
     # Done.
 
