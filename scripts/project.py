@@ -427,6 +427,7 @@
 # <stage><fcl><endstage> - Finalization script for this substage.
 # <stage><fcl><exe> - Executable to use in this substage (default "lar").
 # <stage><fcl><output> - Output file name for this substage.
+# <stage><fcl><processname> - Override fcl parameter "process_name:" in fcl wrapper.
 # <stage><fcl><projectname> - Override project name for this substage.
 # <stage><fcl><stagename> - Override stage name for this substage.
 # <stage><fcl><version> - Override project version for this substage.
@@ -2548,6 +2549,11 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
       wrapper_fcl.write('#---STAGE %d\n' % stageNum)
       wrapper_fcl.write('#include "%s"\n' % os.path.basename(fcl))
       wrapper_fcl.write('\n')
+
+      # Maybe override process_name.
+
+      if stageNum < len(stage.process_name) and stage.process_name[stageNum] != '':
+          wrapper_fcl.write('process_name: %s\n' % stage.process_name[stageNum])
 
       # Generate overrides for sam metadata fcl parameters.
       # Only do this if our xml file appears to contain sam metadata.
