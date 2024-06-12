@@ -1186,6 +1186,27 @@ def get_user():
     raise RuntimeError('Unable to determine authenticated user.')
 
 
+# Get parent process id of the specified process id.
+# This function works by reading information from the /proc filesystem.
+# Return 0 in case of any kind of difficulty.
+
+def get_ppid(pid):
+
+    result = 0
+
+    statfname = '/proc/%d/status' % pid
+    statf = open(statfname)
+    for line in statf.readlines():
+        if line.startswith('PPid:'):
+            words = line.split()
+            if len(words) >= 2 and words[1].isdigit():
+                result = int(words[1])
+
+    # Done.
+
+    return result
+
+
 # Function to check whether there is a running project.py process on this node
 # with the specified xml file and stage.
 #
@@ -1206,10 +1227,18 @@ def check_running(xmlname, stagename):
 
     result = 0
 
+    # Find all ancestor processes, which we will ignore.
+
+    ignore_pids = set()
+    pid = os.getpid()
+    while pid > 1:
+        ignore_pids.add(pid)
+        pid = get_ppid(pid)
+
     # Look over pids in /proc.
 
     for pid in os.listdir('/proc'):
-        if pid.isdigit() and int(pid) != os.getpid():
+        if pid.isdigit() and int(pid) not in ignore_pids:
             procfile = os.path.join('/proc', pid)
             try:
                 pstat = os.stat(procfile)
