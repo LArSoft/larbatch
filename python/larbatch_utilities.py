@@ -34,7 +34,7 @@
 # get_proxy - Get a grid proxy.
 # get_token - Get a bearer token by calling htgettoken.
 # test_kca - Get a kca certificate if necessary.
-# text_proxy - Get a grid proxy if necessary.
+# test_proxy - Get a grid proxy if necessary.
 # test_token - Get bearer token if necessary.
 # get_experiment - Get standard experiment name.
 # get_user - Get authenticated user.
@@ -65,6 +65,7 @@
 # convert_str - Accepting unicode or bytes as input, convert to default python str.
 # convert_bytes - Accepting unicode or bytes as input, convert to bytes.
 # test_jobsub - Test whether jobsub_client is set up.
+# validate_stage - Validate project and stage configurations.
 #
 ######################################################################
 
@@ -762,6 +763,10 @@ def test_kca():
 # Test whether user has a valid grid proxy.  If not, try to get a new one.
 
 def test_proxy():
+
+    if test_token():
+        return True
+
     global proxy_ok
     if not proxy_ok:
         try:
@@ -793,7 +798,17 @@ def test_proxy():
 def test_token():
     global token_ok
     if not token_ok:
-        get_token()
+
+        # Try running httokendecode.
+
+        try:
+            subprocess.check_call(['httokendecode'], stdout=-1, stderr=-1)
+            token_ok = True
+        except:
+            token_ok = False
+
+        if not token_ok:
+            get_token()
 
     # Done.
 
@@ -826,6 +841,16 @@ def test_jobsub():
         sys.exit(1)
 
     return jobsub_ok
+
+# Function to validate project and stage configurations.
+# Return True if good, False if bad.
+# Returning false will prevent jobs from being submitted.
+# This implementation doesn't do anything.
+# Can be overridden in experiment_utilities to provide experiment-dependent validations.
+
+def validate_stage(project, stage):
+    return True
+
 
 # Return dCache server.
 
@@ -1162,6 +1187,27 @@ def get_user():
     raise RuntimeError('Unable to determine authenticated user.')
 
 
+# Get parent process id of the specified process id.
+# This function works by reading information from the /proc filesystem.
+# Return 0 in case of any kind of difficulty.
+
+def get_ppid(pid):
+
+    result = 0
+
+    statfname = '/proc/%d/status' % pid
+    statf = open(statfname)
+    for line in statf.readlines():
+        if line.startswith('PPid:'):
+            words = line.split()
+            if len(words) >= 2 and words[1].isdigit():
+                result = int(words[1])
+
+    # Done.
+
+    return result
+
+
 # Function to check whether there is a running project.py process on this node
 # with the specified xml file and stage.
 #
@@ -1182,10 +1228,18 @@ def check_running(xmlname, stagename):
 
     result = 0
 
+    # Find all ancestor processes, which we will ignore.
+
+    ignore_pids = set()
+    pid = os.getpid()
+    while pid > 1:
+        ignore_pids.add(pid)
+        pid = get_ppid(pid)
+
     # Look over pids in /proc.
 
     for pid in os.listdir('/proc'):
-        if pid.isdigit() and int(pid) != os.getpid():
+        if pid.isdigit() and int(pid) not in ignore_pids:
             procfile = os.path.join('/proc', pid)
             try:
                 pstat = os.stat(procfile)
