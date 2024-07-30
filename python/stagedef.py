@@ -100,6 +100,7 @@ class StageDef:
             self.end_script = base_stage.end_script
             self.mid_source = base_stage.mid_source
             self.mid_script = base_stage.mid_script
+            self.process_name = base_stage.pocess_name
             self.project_name = base_stage.project_name
             self.stage_name = base_stage.stage_name
             self.project_version = base_stage.project_version
@@ -187,6 +188,7 @@ class StageDef:
             self.end_script = []   # Worker end-of-job script.
             self.mid_source = {}   # Worker midstage source init scripts.
             self.mid_script = {}   # Worker midstage finalization scripts.
+            self.process_name = [] # Process name override.
             self.project_name = [] # Project name overrides.
             self.stage_name = []   # Stage name overrides.
             self.project_version = [] # Project version overrides.
@@ -714,6 +716,42 @@ class StageDef:
 
                         self.end_script.append(end_script)
 
+	# Process name overrides (repeatable subelement).
+
+        process_name_elements = stage_element.getElementsByTagName('processname')
+        if len(process_name_elements) > 0:
+            for process_name_element in process_name_elements:
+
+                # Match this process name with its parent fcl element.
+
+                fcl_element = process_name_element.parentNode
+                if fcl_element.nodeName != 'fcl':
+                    raise XMLError("Found <processname> element outside <fcl> element.")
+                fcl = str(fcl_element.firstChild.data).strip()
+
+                # Find the index of this fcl file.
+                # Python will raise an exception if the fcl can't be found (shouldn't happen).
+
+                n = self.fclname.index(fcl)
+
+                # Make sure process_name list is long enough.
+
+                while len(self.process_name) < n+1:
+                    self.process_name.append('')
+
+                # Extract process name and add it to list.
+
+                process_name = str(process_name_element.firstChild.data)
+                self.process_name[n] = process_name
+
+        # Make sure that the size of the process_name list (if present) ia at least as
+        # long as the fclname list.
+        # If not, extend by adding empty string.
+
+        if len(self.process_name) > 0:
+            while len(self.process_name) < len(self.fclname):
+                self.process_name.append('')
+
 	# Project name overrides (repeatable subelement).
 
         project_name_elements = stage_element.getElementsByTagName('projectname')
@@ -1213,6 +1251,7 @@ class StageDef:
         result += 'Worker end-of-job script = %s\n' % self.end_script
         result += 'Worker midstage source initialization scripts = %s\n' % self.mid_source
         result += 'Worker midstage finalization scripts = %s\n' % self.mid_script
+        result += 'Process name overrides = %s\n' % self.process_name
         result += 'Project name overrides = %s\n' % self.project_name
         result += 'Stage name overrides = %s\n' % self.stage_name
         result += 'Project version overrides = %s\n' % self.project_version
