@@ -556,14 +556,19 @@ class ProjectDef:
         
         fcl_list = []
         for name in fclname:
-         fcl = ''
-         for fcldir in self.fclpath:
+          fcl_found = False
+          fcl = ''
+          for fcldir in self.fclpath:
             fcl = os.path.join(fcldir, name)
             #print fcl
             if larbatch_posix.exists(fcl):
+                fcl_found = True
                 break
-         
-         if fcl == '' or not larbatch_posix.exists(fcl):
-             raise IOError('Could not find fcl file %s.' % name)
-         fcl_list.append(fcl)      
+
+          # If we didn't find the fcl full path, just return the fcl name.
+
+          if not fcl_found:
+            fcl = name
+
+          fcl_list.append(fcl)
         return fcl_list

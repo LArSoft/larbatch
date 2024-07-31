@@ -2528,9 +2528,10 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
     # Copy the fcl file to the work directory.
 
     for fcl in fcls:
-      workfcl = os.path.join(tmpworkdir, os.path.basename(fcl))
-      if os.path.abspath(fcl) != os.path.abspath(workfcl):
-        larbatch_posix.copy(fcl, workfcl)
+      if larbatch_posix.exists(fcl):
+        workfcl = os.path.join(tmpworkdir, os.path.basename(fcl))
+        if os.path.abspath(fcl) != os.path.abspath(workfcl):
+          larbatch_posix.copy(fcl, workfcl)
 
 
     # Construct a wrapper fcl file (called "wrapper.fcl") that will include
