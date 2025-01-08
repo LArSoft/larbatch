@@ -2842,6 +2842,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
     # Copy helper scripts to work directory.
 
     helpers = ('root_metadata.py',
+               'artroot_filter.py',
                'merge_json.py',
                'subruns.py',
                'validate_in_job.py',

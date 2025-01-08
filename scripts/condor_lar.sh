@@ -1816,7 +1816,7 @@ EOF
   #echo "Outfile is $OUTFILE"
    
 
-  next_stage_input=`ls -t1 *.root | egrep -v 'celltree|hist|larlite|larcv|Supplemental|TGraphs' | head -n1`
+  next_stage_input=`ls -t1 *.root | egrep -v 'celltree|hist|larlite|larcv|Supplemental|TGraphs' | artroot_filter.py | head -n1`
 
   # Don't let file name get too long.
 

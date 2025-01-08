@@ -100,7 +100,7 @@ class StageDef:
             self.end_script = base_stage.end_script
             self.mid_source = base_stage.mid_source
             self.mid_script = base_stage.mid_script
-            self.process_name = base_stage.pocess_name
+            self.process_name = base_stage.process_name
             self.project_name = base_stage.project_name
             self.stage_name = base_stage.stage_name
             self.project_version = base_stage.project_version
