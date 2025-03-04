@@ -409,7 +409,7 @@ def start_project(defname, default_prjname, max_files, force_snapshot, filelistd
 
     # Start the project.
 
-    print('Starting project %s.' % prjname)
+    print('Starting project %s' % prjname)
     s.startProject(prjname,
                    defname=defname, 
                    station=get_experiment(),
