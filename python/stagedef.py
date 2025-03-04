@@ -581,30 +581,30 @@ class StageDef:
         init_script_elements = stage_element.getElementsByTagName('initscript')
         if len(init_script_elements) > 0:
             for init_script_element in init_script_elements:
-                init_script = str(init_script_element.firstChild.data)
+                init_script = str(init_script_element.firstChild.data).split()
 
                 # Make sure init script exists, and convert into a full path.
 
                 if check:
-                    if init_script != '':
-                        if larbatch_posix.exists(init_script):
-                            init_script = os.path.realpath(init_script)
+                    if len(init_script) > 0:
+                        if larbatch_posix.exists(init_script[0]):
+                            init_script[0] = os.path.realpath(init_script[0])
                         else:
 
                             # Look for script on execution path.
 
                             try:
-                                jobinfo = subprocess.Popen(['which', init_script],
+                                jobinfo = subprocess.Popen(['which', init_script[0]],
                                                            stdout=subprocess.PIPE,
                                                            stderr=subprocess.PIPE)
                                 jobout, joberr = jobinfo.communicate()
                                 rc = jobinfo.poll()
-                                init_script = convert_str(jobout.splitlines()[0].strip())
+                                init_script[0] = convert_str(jobout.splitlines()[0].strip())
                             except:
                                 pass
 
-                        if not larbatch_posix.exists(init_script):
-                            raise IOError('Init script %s not found.' % init_script)
+                        if not larbatch_posix.exists(init_script[0]):
+                            raise IOError('Init script %s not found.' % init_script[0])
 
                     self.init_script.append(init_script)
 
@@ -667,30 +667,30 @@ class StageDef:
         end_script_elements = stage_element.getElementsByTagName('endscript')
         if len(end_script_elements) > 0:
             for end_script_element in end_script_elements:
-                end_script = str(end_script_element.firstChild.data)
+                end_script = str(end_script_element.firstChild.data).split()
 
                 # Make sure end-of-job scripts exists, and convert into a full path.
 
-                if end_script != '':
+                if len(end_script) > 0:
                     if check:
-                        if larbatch_posix.exists(end_script):
-                            end_script = os.path.realpath(end_script)
+                        if larbatch_posix.exists(end_script[0]):
+                            end_script[0] = os.path.realpath(end_script[0])
                         else:
 
                             # Look for script on execution path.
 
                             try:
-                                jobinfo = subprocess.Popen(['which', end_script],
+                                jobinfo = subprocess.Popen(['which', end_script[0]],
                                                            stdout=subprocess.PIPE,
                                                            stderr=subprocess.PIPE)
                                 jobout, joberr = jobinfo.communicate()
                                 rc = jobinfo.poll()
-                                end_script = convert_str(jobout.splitlines()[0].strip())
+                                end_script[0] = convert_str(jobout.splitlines()[0].strip())
                             except:
                                 pass
 
-                        if not larbatch_posix.exists(end_script):
-                            raise IOError('End-of-job script %s not found.' % end_script)
+                        if not larbatch_posix.exists(end_script[0]):
+                            raise IOError('End-of-job script %s not found.' % end_script[0])
 
                     # The <endscript> element can occur at the top level of the <stage>
                     # element, or inside a <fcl> element.
