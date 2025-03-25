@@ -11,6 +11,10 @@
 #
 # project.py <options>
 #
+# Authentication options.
+#
+# --token             - Allowed for compatibility (no effect).
+#
 # Project options:
 #
 # --xml <-|file|url>  - Xml file containing project description.
@@ -4074,6 +4078,8 @@ def main(argv):
         elif args[0] == '-xh' or args[0] == '--xmlhelp' :
             xmlhelp()
             return 0
+        elif args[0] == '--token':
+            del args[0]
         elif args[0] == '--xml' and len(args) > 1:
             xmlfile = args[1]
             del args[0:2]
