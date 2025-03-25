@@ -30,11 +30,7 @@
 # Authentication functions.
 #
 # test_ticket - Raise an exception of user does not have a valid kerberos ticket.
-# get_kca - Get a kca certificate.
-# get_proxy - Get a grid proxy.
 # get_token - Get a bearer token by calling htgettoken.
-# test_kca - Get a kca certificate if necessary.
-# test_proxy - Get a grid proxy if necessary.
 # test_token - Get bearer token if necessary.
 # get_experiment - Get standard experiment name.
 # get_user - Get authenticated user.
@@ -86,19 +82,16 @@ from project_modules.ifdherror import IFDHError
 # Global variables.
 
 ticket_ok = False
-kca_ok = False
-proxy_ok = False
 token_ok = False
-kca_user = ''
 jobsub_ok = False
 
 # Copy file using ifdh, with timeout.
 
 def ifdh_cp(source, destination):
 
-    # Get proxy.
+    # Get token.
 
-    test_proxy()
+    test_token()
 
     # Make sure environment variables X509_USER_CERT and X509_USER_KEY
     # are not defined (they confuse ifdh, or rather the underlying tools).
@@ -141,9 +134,9 @@ def ifdh_cp(source, destination):
 
 def ifdh_ls(path, depth):
 
-    # Get proxy.
+    # Get token.
 
-    test_proxy()
+    test_token()
 
     # Make sure environment variables X509_USER_CERT and X509_USER_KEY
     # are not defined (they confuse ifdh, or rather the underlying tools).
@@ -190,9 +183,9 @@ def ifdh_ls(path, depth):
 
 def ifdh_ll(path, depth):
 
-    # Get proxy.
+    # Get token.
 
-    test_proxy()
+    test_token()
 
     # Make sure environment variables X509_USER_CERT and X509_USER_KEY
     # are not defined (they confuse ifdh, or rather the underlying tools).
@@ -238,9 +231,9 @@ def ifdh_ll(path, depth):
 
 def ifdh_mkdir(path):
 
-    # Get proxy.
+    # Get token.
 
-    test_proxy()
+    test_token()
 
     # Make sure environment variables X509_USER_CERT and X509_USER_KEY
     # are not defined (they confuse ifdh, or rather the underlying tools).
@@ -286,9 +279,9 @@ def ifdh_mkdir(path):
 
 def ifdh_mkdir_p(path):
 
-    # Get proxy.
+    # Get token.
 
-    test_proxy()
+    test_token()
 
     # Make sure environment variables X509_USER_CERT and X509_USER_KEY
     # are not defined (they confuse ifdh, or rather the underlying tools).
@@ -334,9 +327,9 @@ def ifdh_mkdir_p(path):
 
 def ifdh_rmdir(path):
 
-    # Get proxy.
+    # Get token.
 
-    test_proxy()
+    test_token()
 
     # Make sure environment variables X509_USER_CERT and X509_USER_KEY
     # are not defined (they confuse ifdh, or rather the underlying tools).
@@ -382,9 +375,9 @@ def ifdh_rmdir(path):
 
 def ifdh_chmod(path, mode):
 
-    # Get proxy.
+    # Get token.
 
-    test_proxy()
+    test_token()
 
     # Make sure environment variables X509_USER_CERT and X509_USER_KEY
     # are not defined (they confuse ifdh, or rather the underlying tools).
@@ -428,9 +421,9 @@ def ifdh_chmod(path, mode):
 
 def ifdh_mv(src, dest):
 
-    # Get proxy.
+    # Get token.
 
-    test_proxy()
+    test_token()
 
     # Make sure environment variables X509_USER_CERT and X509_USER_KEY
     # are not defined (they confuse ifdh, or rather the underlying tools).
@@ -476,9 +469,9 @@ def ifdh_mv(src, dest):
 
 def ifdh_rm(path):
 
-    # Get proxy.
+    # Get token.
 
-    test_proxy()
+    test_token()
 
     # Make sure environment variables X509_USER_CERT and X509_USER_KEY
     # are not defined (they confuse ifdh, or rather the underlying tools).
@@ -607,77 +600,6 @@ def test_ticket():
     return ticket_ok
 
 
-# Get kca certificate.
-
-def get_kca():
-
-    global kca_ok
-    kca_ok = False
-
-    # First, make sure we have a kerberos ticket.
-
-    krb_ok = test_ticket()
-    if krb_ok:
-
-        # Get kca certificate.
-
-        kca_ok = False
-        try:
-            subprocess.check_call(['kx509'], stdout=-1, stderr=-1)
-            kca_ok = True
-        except:
-            pass
-
-    # Done
-
-    return kca_ok
-
-
-# Get grid proxy.
-# This implementation should be good enough for experiments in the fermilab VO.
-# Experiments not in the fermilab VO (lbne/dune) should override this function
-# in experiment_utilities.py.
-
-def get_proxy():
-
-    global proxy_ok
-    proxy_ok = False
-
-    # Make sure we have a valid certificate.
-
-    test_kca()
-
-    # Get proxy using either specified cert+key or default cert.
-
-    if 'X509_USER_CERT' in os.environ and 'X509_USER_KEY' in os.environ:
-        cmd=['voms-proxy-init',
-             '-rfc',
-             '-cert', os.environ['X509_USER_CERT'],
-             '-key', os.environ['X509_USER_KEY'],
-             '-voms', 'fermilab:/fermilab/%s/Role=%s' % (get_experiment(), get_role())]
-        try:
-            subprocess.check_call(cmd, stdout=-1, stderr=-1)
-            proxy_ok = True
-        except:
-            pass
-        pass
-    else:
-        cmd=['voms-proxy-init',
-             '-noregen',
-             '-rfc',
-             '-voms',
-             'fermilab:/fermilab/%s/Role=%s' % (get_experiment(), get_role())]
-        try:
-            subprocess.check_call(cmd, stdout=-1, stderr=-1)
-            proxy_ok = True
-        except:
-            pass
-
-    # Done
-
-    return proxy_ok
-
-
 # Get a bearer token by calling htgettoken.
 
 def get_token():
@@ -706,91 +628,6 @@ def get_token():
     # Done.
 
     return token_ok
-
-
-# Test whether user has a valid kca certificate.  If not, try to get a new one.
-
-def test_kca():
-    global kca_ok
-    if not kca_ok:
-        try:
-            if 'X509_USER_PROXY' in os.environ:
-                subprocess.check_call(['voms-proxy-info',
-                                       '-file', os.environ['X509_USER_PROXY'],
-                                       '-exists'], stdout=-1, stderr=-1)
-            elif 'X509_USER_CERT' in os.environ and 'X509_USER_KEY' in os.environ:
-                subprocess.check_call(['voms-proxy-info',
-                                       '-file', os.environ['X509_USER_CERT'],
-                                       '-exists'], stdout=-1, stderr=-1)
-            else:
-                subprocess.check_call(['voms-proxy-info', '-exists'], stdout=-1, stderr=-1)
-
-                # Workaround jobsub bug by setting environment variable X509_USER_PROXY to
-                # point to the default location of the kca certificate.
-
-                x509_path = convert_str(subprocess.check_output(['voms-proxy-info', '-path'], stderr=-1))
-                os.environ['X509_USER_PROXY'] = x509_path.strip()
-
-            kca_ok = True
-        except:
-            pass
-
-    # If at this point we don't have a kca certificate, try to get one.
-
-    if not kca_ok:
-        get_kca()
-
-    # Final checkout.
-
-    if not kca_ok:
-        try:
-            if 'X509_USER_PROXY' in os.environ:
-                subprocess.check_call(['voms-proxy-info',
-                                       '-file', os.environ['X509_USER_PROXY'],
-                                       '-exists'], stdout=-1, stderr=-1)
-            elif 'X509_USER_CERT' in os.environ and 'X509_USER_KEY' in os.environ:
-                subprocess.check_call(['voms-proxy-info',
-                                       '-file', os.environ['X509_USER_CERT'],
-                                       '-exists'], stdout=-1, stderr=-1)
-            else:
-                subprocess.check_call(['voms-proxy-info', '-exists'], stdout=-1, stderr=-1)
-            kca_ok = True
-        except:
-            raise RuntimeError('Please get a kca certificate.')
-    return kca_ok
-
-
-# Test whether user has a valid grid proxy.  If not, try to get a new one.
-
-def test_proxy():
-
-    if test_token():
-        return True
-
-    global proxy_ok
-    if not proxy_ok:
-        try:
-            subprocess.check_call(['voms-proxy-info', '-exists'], stdout=-1, stderr=-1)
-            subprocess.check_call(['voms-proxy-info', '-exists', '-acissuer'], stdout=-1, stderr=-1)
-            proxy_ok = True
-        except:
-            pass
-
-    # If at this point we don't have a grid proxy, try to get one.
-
-    if not proxy_ok:
-        get_proxy()
-
-    # Final checkout.
-
-    if not proxy_ok:
-        try:
-            subprocess.check_call(['voms-proxy-info', '-exists'], stdout=-1, stderr=-1)
-            subprocess.check_call(['voms-proxy-info', '-exists', '-acissuer'], stdout=-1, stderr=-1)
-            proxy_ok = True
-        except:
-            raise RuntimeError('Please get a grid proxy.')
-    return proxy_ok
 
 
 # Test whether user has a valid bearer token.  If not, try to get a new one.
@@ -1110,15 +947,9 @@ def get_sam_metadata(project, stage):
     return result
 
 
-# Get authenticated user (from kerberos ticket, not $USER).
+# Get authenticated user.
 
 def get_user():
-
-    # See if we have a cached value for user.
-
-    global kca_user
-    if kca_user != '':
-        return kca_user
 
     # Return production user name if Role is Production
 
@@ -1126,65 +957,7 @@ def get_user():
         return get_prouser()
 
     else:
-
-        # First make sure we have a kca certificate (raise exception if not).
-
-        test_kca()
-
-        # Return user name from certificate if Role is Analysis
-
-        subject = ''
-        if 'X509_USER_PROXY' in os.environ:
-            subject = convert_str(subprocess.check_output(['voms-proxy-info',
-                                                           '-file', os.environ['X509_USER_PROXY'],
-                                                           '-subject'], stderr=-1))
-        elif 'X509_USER_CERT' in os.environ and 'X509_USER_KEY' in os.environ:
-            subject = convert_str(subprocess.check_output(['voms-proxy-info',
-                                                           '-file', os.environ['X509_USER_CERT'],
-                                                           '-subject'], stderr=-1))
-        else:
-            subject = convert_str(subprocess.check_output(['voms-proxy-info', '-subject'],
-                                                          stderr=-1))
-
-        # Get the last non-numeric CN
-
-        cn = ''
-        while cn == '':
-            n = subject.rfind('/CN=')
-            if n >= 0:
-                cn = subject[n+4:]
-                if cn.strip().isdigit():
-                    cn = ''
-                    subject = subject[:n]
-            else:
-                break
-
-        # Truncate everything after the first '/'.
-
-        n = cn.find('/')
-        if n >= 0:
-            cn = cn[:n]
-
-        # Truncate everything after the first newline.
-
-        n = cn.find('\n')
-        if n >= 0:
-            cn = cn[:n]
-
-        # Truncate everything before the first ":" (UID:).
-
-        n = cn.find(':')
-        if n >= 0:
-            cn = cn[n+1:]
-
-        # Done (maybe).
-
-        if cn != '':
-            return cn
-
-    # Something went wrong...
-
-    raise RuntimeError('Unable to determine authenticated user.')
+        return getpass.getuser()
 
 
 # Get parent process id of the specified process id.

@@ -896,7 +896,7 @@ def root_stream(path):
     if path.startswith('/pnfs/') and (prefer_grid or not pnfs_is_mounted):
         if debug:
             print('*** Larbatch_posix: Stream path %s using xrootd.' % path)
-        larbatch_utilities.test_proxy()
+        larbatch_utilities.test_token()
         stream = larbatch_utilities.xrootd_uri(path)
     else:
         if debug:

@@ -11,11 +11,6 @@
 #
 # project.py <options>
 #
-# Authentication options.
-#
-# --token             - Prefer token authentication.
-# --proxy             - Prefer x509 cert/proxy authentication (default).
-#
 # Project options:
 #
 # --xml <-|file|url>  - Xml file containing project description.
@@ -509,7 +504,6 @@ import samweb_cli
 
 samweb = None           # Initialized SAMWebClient object
 extractor_dict = None   # Metadata extractor
-proxy_ok = False
 
 # Function to make sure global SAMWebClient object is initialized.
 # Also imports extractor_dict module.
@@ -640,7 +634,7 @@ def dostatus(projects):
 
     # BatchStatus constructor requires authentication.
 
-    project_utilities.test_kca()
+    project_utilities.test_token()
 
     # For backward compatibility, allow this function to be called with
     # either a single project or a list of projects.
@@ -851,7 +845,6 @@ def get_pubs_stage(xmlfile, projectname, stagename, run, subruns, version=None):
 
 def check_root_file(path, logdir):
 
-    global proxy_ok
     result = (-2, '')
     json_ok = False
     md = []
@@ -2145,7 +2138,7 @@ def docheck_declarations(logdir, outdir, declare, ana=False):
                     expSpecificMetaData = expMetaData(os.environ['SAM_EXPERIMENT'],larbatch_posix.root_stream(path))
                     md = expSpecificMetaData.getmetadata(mdjson)
                 if len(md) > 0:
-                    project_utilities.test_kca()
+                    project_utilities.test_token()
 
                     # Make lack of parent files a nonfatal error.
                     # This should probably be removed at some point.
@@ -2218,7 +2211,7 @@ def docheck_definition(defname, dim, define):
     else:
         if define:
             print('Creating definition %s.' % defname)
-            project_utilities.test_kca()
+            project_utilities.test_token()
             samweb.createDefinition(defname=defname, dims=dim)
         else:
             result = 1
@@ -2266,7 +2259,7 @@ def doundefine(defname):
 
     if def_exists:
         print('Deleting definition: %s' % defname)
-        project_utilities.test_kca()
+        project_utilities.test_token()
         samweb.deleteDefinition(defname=defname)
     else:
         print('No such definition: %s' % defname)
@@ -2390,7 +2383,7 @@ def docheck_locations(dim, outdir, add, clean, remove, upload):
             loc = node + loc.split(':')[-1]
             if add:
                 print('Adding location: %s.' % loc)
-                project_utilities.test_kca()
+                project_utilities.test_token()
                 samweb.addFileLocation(filenameorid=filename, location=loc)
             elif not upload:
                 print('Can add location: %s.' % loc)
@@ -2398,7 +2391,7 @@ def docheck_locations(dim, outdir, add, clean, remove, upload):
         for loc in locs_to_remove:
             if clean or remove:
                 print('Removing location: %s.' % loc)
-                project_utilities.test_kca()
+                project_utilities.test_token()
                 samweb.removeFileLocation(filenameorid=filename, location=loc)
             elif not upload:
                 print('Should remove location: %s.' % loc)
@@ -3019,7 +3012,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
 
         makeup_defname = ''
         if len(cpids) > 0:
-            project_utilities.test_kca()
+            project_utilities.test_token()
             makeup_defname = samweb.makeProjectName(stage.inputdef) + '_makeup'
 
             # Construct comma-separated list of consumer process ids.
@@ -3037,7 +3030,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
             # Create makeup dataset definition.
 
             print('Creating makeup sam dataset definition %s' % makeup_defname)
-            project_utilities.test_kca()
+            project_utilities.test_token()
             samweb.createDefinition(defname=makeup_defname, dims=dim)
             makeup_count = samweb.countFiles(defname=makeup_defname)
             print('Makeup dataset contains %d files.' % makeup_count)
@@ -3091,7 +3084,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
     prjname = ''
     if inputdef != '':
         import_samweb()
-        project_utilities.test_kca()
+        project_utilities.test_token()
         prjname = samweb.makeProjectName(inputdef)
 
     # Get mix input sam dataset definition name.
@@ -3099,7 +3092,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
     mixprjname = ''
     if stage.mixinputdef != '':
         import_samweb()
-        project_utilities.test_kca()
+        project_utilities.test_token()
         mixprjname = 'mix_%s' % samweb.makeProjectName(stage.mixinputdef)
 
     # If the prestart flag is specified, start the sam project now.
@@ -3675,7 +3668,7 @@ def dosubmit(project, stage, makeup=False, recur=False, dryrun=False, retain=Fal
 
     # Make sure we have a kerberos ticket.
 
-    project_utilities.test_kca()
+    project_utilities.test_token()
 
     # Make sure jobsub_client is available.
 
@@ -3883,7 +3876,7 @@ def doaudit(stage):
             # Declare the content status of the file as bad in SAM.
 
             sdict = {'content_status':'bad'}
-            project_utilities.test_kca()
+            project_utilities.test_token()
             samweb.modifyFileMetadata(rmfile, sdict)
             print('\nDeclaring the status of the following file as bad:', rmfile)
 
@@ -4006,7 +3999,6 @@ def main(argv):
 
     # Parse arguments.
 
-    use_token = 0
     xmlfile = ''
     projectname = ''
     stagenames = ['']
@@ -4082,12 +4074,6 @@ def main(argv):
         elif args[0] == '-xh' or args[0] == '--xmlhelp' :
             xmlhelp()
             return 0
-        elif args[0] == '--token':
-            use_token = 1
-            del args[0]
-        elif args[0] == '--proxy':
-            use_token = 0
-            del args[0]
         elif args[0] == '--xml' and len(args) > 1:
             xmlfile = args[1]
             del args[0:2]
@@ -4289,12 +4275,9 @@ def main(argv):
             print('Unknown option %s' % args[0])
             return 1
 
-    # Specify authentication method.
+    # Initialize token authentication.
 
-    if use_token != 0:
-        project_utilities.use_token_auth()
-    else:
-        project_utilities.use_proxy_auth()
+    project_utilities.use_token_auth()
 
     # Normalize xml file path.
 
@@ -4397,7 +4380,7 @@ def main(argv):
 
                 # Recurcive definition doesn't exist, so create it.
 
-                project_utilities.test_kca()
+                project_utilities.test_token()
 
                 # Start sam dimension with the base dataset.
 
@@ -4484,7 +4467,7 @@ def main(argv):
                 # Create definition.
 
                 print('Creating recursive dataset definition %s' % stage.inputdef)
-                project_utilities.test_kca()
+                project_utilities.test_token()
                 samweb.createDefinition(defname=stage.inputdef, dims=dim)
 
         # Validate project/stage.
