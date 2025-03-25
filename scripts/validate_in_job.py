@@ -33,7 +33,6 @@ import samweb_cli
 
 samweb = None           # Initialized SAMWebClient object
 extractor_dict = None   # Metadata extractor
-proxy_ok = False
 
 # Check a single root file.
 # Returns a 2-tuple containing the number of events and stream name.
@@ -44,7 +43,6 @@ proxy_ok = False
 
 def check_root_file(path, logdir):
 
-    global proxy_ok
     result = (-2, '')
     json_ok = False
     md = []
@@ -397,7 +395,7 @@ def main():
                                     md['parents'].append(mixparent_dict)
                                              
                     if len(md) > 0:
-                        project_utilities.test_kca()
+                        project_utilities.test_token()
 
                         # Make lack of parent files a nonfatal error.
                         # This should probably be removed at some point.
@@ -501,7 +499,7 @@ def main():
                                     md['parents'].append(mixparent_dict)
                                              
                     if len(md) > 0 and 'file_type' in md:
-                        project_utilities.test_kca()
+                        project_utilities.test_token()
 
                         # Make lack of parent files a nonfatal error.
                         # This should probably be removed at some point.
