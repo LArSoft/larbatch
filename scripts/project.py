@@ -11,6 +11,10 @@
 #
 # project.py <options>
 #
+# Authentication options.
+#
+# --token             - Allowed for compatibility (no effect).
+#
 # Project options:
 #
 # --xml <-|file|url>  - Xml file containing project description.
@@ -2655,24 +2659,19 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
 
     for init_script in stage.init_script:
         if len(init_script) > 0:
-            if not larbatch_posix.exists(init_script[0]):
-                raise RuntimeError('Worker initialization script %s does not exist.\n' % \
-                                   init_script[0])
-            work_init_script = os.path.join(tmpworkdir, os.path.basename(init_script[0]))
-            if init_script[0] != work_init_script:
-                larbatch_posix.copy(init_script[0], work_init_script)
+            if larbatch_posix.exists(init_script[0]):
+                work_init_script = os.path.join(tmpworkdir, os.path.basename(init_script[0]))
+                if init_script[0] != work_init_script:
+                    larbatch_posix.copy(init_script[0], work_init_script)
 
     # Update stage.init_script from list to single script.
-    # Generate a wrapper script if there is more than one init script or arguments.
 
     n = len(stage.init_script)
     if n == 0:
         stage.init_script = ''
-    elif n == 1 and len(stage.init_script[0]) == 1:
-        stage.init_script = stage.init_script[0][0]
     else:
 
-        # If there are multiple init scripts or arguments, generate a wrapper init script
+        # If there are init scripts, generate a wrapper init script
         # init_wrapper.sh.
 
         work_init_wrapper = os.path.join(tmpworkdir, 'init_wrapper.sh')
@@ -2681,7 +2680,10 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
         for init_script in stage.init_script:
             f.write('echo\n')
             f.write('echo "Executing %s"\n' % os.path.basename(init_script[0]))
-            f.write('./%s' % os.path.basename(init_script[0]))
+            if larbatch_posix.exists(init_script[0]):
+                f.write('./%s' % os.path.basename(init_script[0]))
+            else:
+                f.write(os.path.basename(init_script[0]))
             if len(init_script) > 1:
                 f.write(' %s' % ' '.join(init_script[1:]))
             f.write('\n')
@@ -2699,23 +2701,19 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
 
     for init_source in stage.init_source:
         if init_source != '':
-            if not larbatch_posix.exists(init_source):
-                raise RuntimeError('Worker initialization source script %s does not exist.\n' % \
-                    init_source)
-        work_init_source = os.path.join(tmpworkdir, os.path.basename(init_source))
-        if init_source != work_init_source:
-            larbatch_posix.copy(init_source, work_init_source)
+            if larbatch_posix.exists(init_source):
+                work_init_source = os.path.join(tmpworkdir, os.path.basename(init_source))
+                if init_source != work_init_source:
+                    larbatch_posix.copy(init_source, work_init_source)
 
     # Update stage.init_source from list to single script.
 
     n = len(stage.init_source)
     if n == 0:
         stage.init_source = ''
-    elif n == 1:
-        stage.init_source = stage.init_source[0]
     else:
 
-        # If there are multiple init source scripts, generate a wrapper init script
+        # If there are init source scripts, generate a wrapper init script
         # init_source_wrapper.sh.
 
         work_init_source_wrapper = os.path.join(tmpworkdir, 'init_source_wrapper.sh')
@@ -2723,7 +2721,10 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
         for init_source in stage.init_source:
             f.write('echo\n')
             f.write('echo "Sourcing %s"\n' % os.path.basename(init_source))
-            f.write('source %s\n' % os.path.basename(init_source))
+            if larbatch_posix.exists(init_source):
+                f.write('source %s\n' % os.path.basename(init_source))
+            else:
+                f.write('source `which %s`\n' % os.path.basename(init_source))
         f.write('echo\n')
         f.write('echo "Done sourcing initialization scripts."\n')
         f.close()
@@ -2733,23 +2734,19 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
 
     for end_script in stage.end_script:
         if len(end_script) > 0:
-            if not larbatch_posix.exists(end_script[0]):
-                raise RuntimeError('Worker end-of-job script %s does not exist.\n' % end_script[0])
-            work_end_script = os.path.join(tmpworkdir, os.path.basename(end_script[0]))
-            if end_script[0] != work_end_script:
-                larbatch_posix.copy(end_script[0], work_end_script)
+            if larbatch_posix.exists(end_script[0]):
+                work_end_script = os.path.join(tmpworkdir, os.path.basename(end_script[0]))
+                if end_script[0] != work_end_script:
+                    larbatch_posix.copy(end_script[0], work_end_script)
 
     # Update stage.end_script from list to single script.
-    # Generate a wrapper script if there is more than one end script or arguments.
 
     n = len(stage.end_script)
     if n == 0:
         stage.end_script = ''
-    elif n == 1 and len(stage.end_script[0]) == 1:
-        stage.end_script = stage.end_script[0][0]
     else:
 
-        # If there are multiple end scripts or arguments, generate a wrapper end script end_wrapper.sh.
+        # If there are end scripts, generate a wrapper end script end_wrapper.sh.
 
         work_end_wrapper = os.path.join(tmpworkdir, 'end_wrapper.sh')
         f = open(work_end_wrapper, 'w')
@@ -2757,7 +2754,10 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
         for end_script in stage.end_script:
             f.write('echo\n')
             f.write('echo "Executing %s"\n' % os.path.basename(end_script[0]))
-            f.write('./%s' % os.path.basename(end_script[0]))
+            if larbatch_posix.exists(end_script[0]):
+                f.write('./%s' % os.path.basename(end_script[0]))
+            else:
+                f.write(os.path.basename(end_script[0]))
             if len(end_script) > 1:
                 f.write(' %s' % ' '.join(end_script[1:]))
             f.write('\n')
@@ -2776,11 +2776,10 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
     for istage in stage.mid_source:
         for mid_source in stage.mid_source[istage]:
             if mid_source != '':
-                if not larbatch_posix.exists(mid_source):
-                    raise RuntimeError('Worker midstage initialization source script %s does not exist.\n' % mid_source)
-                work_mid_source = os.path.join(tmpworkdir, os.path.basename(mid_source))
-                if mid_source != work_mid_source:
-                    larbatch_posix.copy(mid_source, work_mid_source)
+                if larbatch_posix.exists(mid_source):
+                    work_mid_source = os.path.join(tmpworkdir, os.path.basename(mid_source))
+                    if mid_source != work_mid_source:
+                        larbatch_posix.copy(mid_source, work_mid_source)
 
     # Generate midstage source initialization wrapper script mid_source_wrapper.sh 
     # and update stage.mid_script to point to wrapper.
@@ -2794,7 +2793,10 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
                 f.write('if [ $stage -eq %d ]; then\n' % istage)
                 f.write('  echo\n')
                 f.write('  echo "Sourcing %s"\n' % os.path.basename(mid_source))
-                f.write('  source %s\n' % os.path.basename(mid_source))
+                if larbatch_posix.exists(mid_source):
+                    f.write('  source %s\n' % os.path.basename(mid_source))
+                else:
+                    f.write('  source `which %s`\n' % os.path.basename(mid_source))
                 f.write('fi\n')
         f.write('echo\n')
         f.write('echo "Done sourcing midstage source initialization scripts for stage $stage."\n')
@@ -2808,11 +2810,10 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
     for istage in stage.mid_script:
         for mid_script in stage.mid_script[istage]:
             if len(mid_script) > 0:
-                if not larbatch_posix.exists(mid_script[0]):
-                    raise RuntimeError('Worker midstage finalization script %s does not exist.\n' % mid_script[0])
-                work_mid_script = os.path.join(tmpworkdir, os.path.basename(mid_script[0]))
-                if mid_script[0] != work_mid_script:
-                    larbatch_posix.copy(mid_script[0], work_mid_script)
+                if larbatch_posix.exists(mid_script[0]):
+                    work_mid_script = os.path.join(tmpworkdir, os.path.basename(mid_script[0]))
+                    if mid_script[0] != work_mid_script:
+                        larbatch_posix.copy(mid_script[0], work_mid_script)
 
     # Generate midstage finalization wrapper script mid_wrapper.sh and update stage.mid_script 
     # to point to wrapper.
@@ -2827,7 +2828,10 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
                 f.write('if [ $stage -eq %d ]; then\n' % istage)
                 f.write('  echo\n')
                 f.write('  echo "Executing %s"\n' % os.path.basename(mid_script[0]))
-                f.write('  ./%s' % os.path.basename(mid_script[0]))
+                if larbatch_posix.exists(mid_script[0]):
+                    f.write('  ./%s' % os.path.basename(mid_script[0]))
+                else:
+                    f.write(os.path.basename(mid_script[0]))
                 if len(mid_script) > 1:
                     f.write(' %s' % ' '.join(mid_script[1:]))
                 f.write('\n')
@@ -4074,6 +4078,8 @@ def main(argv):
         elif args[0] == '-xh' or args[0] == '--xmlhelp' :
             xmlhelp()
             return 0
+        elif args[0] == '--token':
+            del args[0]
         elif args[0] == '--xml' and len(args) > 1:
             xmlfile = args[1]
             del args[0:2]
