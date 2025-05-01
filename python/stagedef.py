@@ -583,7 +583,8 @@ class StageDef:
             for init_script_element in init_script_elements:
                 init_script = str(init_script_element.firstChild.data).split()
 
-                # Make sure init script exists, and convert into a full path.
+                # Maybe convert init script to full path.
+                # If we can't determine a full path, just leave as is.
 
                 if check:
                     if len(init_script) > 0:
@@ -603,9 +604,6 @@ class StageDef:
                             except:
                                 pass
 
-                        if not larbatch_posix.exists(init_script[0]):
-                            raise IOError('Init script %s not found.' % init_script[0])
-
                     self.init_script.append(init_script)
 
         # Worker initialization source script (repeatable subelement).
@@ -615,7 +613,8 @@ class StageDef:
             for init_source_element in init_source_elements:
                 init_source = str(init_source_element.firstChild.data)
 
-                # Make sure init source script exists, and convert into a full path.
+                # Maybe convert init source script to full path.
+                # If we can't determine a full path, just leave as is.
 
                 if init_source != '':
                     if check:
@@ -634,9 +633,6 @@ class StageDef:
                                 init_source = convert_str(jobout.splitlines()[0].strip())
                             except:
                                 pass
-
-                        if not larbatch_posix.exists(init_source):
-                            raise IOError('Init source script %s not found.' % init_source)
 
                     # The <initsource> element can occur at the top level of the <stage>
                     # element, or inside a <fcl> element.
@@ -669,7 +665,8 @@ class StageDef:
             for end_script_element in end_script_elements:
                 end_script = str(end_script_element.firstChild.data).split()
 
-                # Make sure end-of-job scripts exists, and convert into a full path.
+                # Maybe convert end-of-job script to full path.
+                # If we can't determine a full path, just leave as is.
 
                 if len(end_script) > 0:
                     if check:
@@ -688,9 +685,6 @@ class StageDef:
                                 end_script[0] = convert_str(jobout.splitlines()[0].strip())
                             except:
                                 pass
-
-                        if not larbatch_posix.exists(end_script[0]):
-                            raise IOError('End-of-job script %s not found.' % end_script[0])
 
                     # The <endscript> element can occur at the top level of the <stage>
                     # element, or inside a <fcl> element.
