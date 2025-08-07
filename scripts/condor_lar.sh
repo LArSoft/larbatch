@@ -84,6 +84,7 @@
 # --init-script <arg>     - User initialization script execute.
 # --init-source <arg>     - User initialization script to source (bash).
 # --end-script <arg>      - User end-of-job script to execute.
+# --fin-script <arg>      - User finalization script to execute.
 # --mid-source <arg>      - User midstage initialization script to source.
 # --mid-script <arg>      - User midstage finalization script to execute.
 # --exe <arg>             - Specify art-like executable (default "lar").
@@ -237,6 +238,7 @@ PROCMAP=""
 INITSCRIPT=""
 INITSOURCE=""
 ENDSCRIPT=""
+FINSCRIPT=""
 MIDSOURCE=""
 MIDSCRIPT=""
 SAM_USER=$GRID_USER
@@ -622,6 +624,14 @@ while [ $# -gt 0 ]; do
       fi
       ;;
     
+    # User finalization script.
+    --fin-script )
+      if [ $# -gt 1 ]; then
+        FINSCRIPT=$2
+        shift
+      fi
+      ;;
+    
     # User midstage initialization source script.
     --mid-source )
       if [ $# -gt 1 ]; then
@@ -725,6 +735,7 @@ done
 #echo "INITSCRIPT=$INITSCRIPT"
 #echo "INITSOURCE=$INITSOURCE"
 #echo "ENDSCRIPT=$ENDSCRIPT"
+#echo "FINSCRIPT=$FINSCRIPT"
 #echo "MIDSOURCE=$MIDSOURCE"
 #echo "MIDSCRIPT=$MIDSCRIPT"
 #echo "VALIDATE_IN_JOB=$VALIDATE_IN_JOB"
@@ -974,6 +985,17 @@ if [ x$ENDSCRIPT != x ]; then
     chmod +x $ENDSCRIPT
   else
     echo "Finalization script $ENDSCRIPT does not exist."
+    exit 1
+  fi
+fi
+
+# Make sure finalization script exists and is executable (if specified).
+
+if [ x$FINSCRIPT != x ]; then
+  if [ -f "$FINSCRIPT" ]; then
+    chmod +x $FINSCRIPT
+  else
+    echo "Finalization script $FINSCRIPT does not exist."
     exit 1
   fi
 fi
@@ -2044,6 +2066,17 @@ if [ $VALIDATE_IN_JOB -eq 1 ]; then
       cd $curdir
     fi
 
+fi
+
+# Run optional finalization script.
+
+if [ x$FINSCRIPT != x ]; then
+  echo "Running finalization script ${FINSCRIPT}."
+  ./${FINSCRIPT}
+  status=$?
+  if [ $status -ne 0 ]; then
+    exit $status
+  fi
 fi
 
 # Make a tarball of the log directory contents, and save the tarball in the log directory.

@@ -98,6 +98,7 @@ class StageDef:
             self.init_script = base_stage.init_script
             self.init_source = base_stage.init_source
             self.end_script = base_stage.end_script
+            self.fin_script = base_stage.fin_script
             self.mid_source = base_stage.mid_source
             self.mid_script = base_stage.mid_script
             self.process_name = base_stage.process_name
@@ -186,6 +187,7 @@ class StageDef:
             self.init_script = []  # Worker initialization script.
             self.init_source = []  # Worker initialization bash source script.
             self.end_script = []   # Worker end-of-job script.
+            self.fin_script = []   # Worker finalization script.
             self.mid_source = {}   # Worker midstage source init scripts.
             self.mid_script = {}   # Worker midstage finalization scripts.
             self.process_name = [] # Process name override.
@@ -709,6 +711,36 @@ class StageDef:
                         # This is a <stage> level <endscript> element.
 
                         self.end_script.append(end_script)
+
+        # Worker finalization script (repeatable subelement).
+
+        fin_script_elements = stage_element.getElementsByTagName('finscript')
+        if len(fin_script_elements) > 0:
+            for fin_script_element in fin_script_elements:
+                fin_script = str(fin_script_element.firstChild.data).split()
+
+                # Maybe convert finalization script to full path.
+                # If we can't determine a full path, just leave as is.
+
+                if len(fin_script) > 0:
+                    if check:
+                        if larbatch_posix.exists(fin_script[0]):
+                            fin_script[0] = os.path.realpath(fin_script[0])
+                        else:
+
+                            # Look for script on execution path.
+
+                            try:
+                                jobinfo = subprocess.Popen(['which', fin_script[0]],
+                                                           stdout=subprocess.PIPE,
+                                                           stderr=subprocess.PIPE)
+                                jobout, joberr = jobinfo.communicate()
+                                rc = jobinfo.poll()
+                                fin_script[0] = convert_str(jobout.splitlines()[0].strip())
+                            except:
+                                pass
+
+                    self.fin_script.append(fin_script)
 
 	# Process name overrides (repeatable subelement).
 
@@ -1243,6 +1275,7 @@ class StageDef:
         result += 'Worker initialization script = %s\n' % self.init_script
         result += 'Worker initialization source script = %s\n' % self.init_source
         result += 'Worker end-of-job script = %s\n' % self.end_script
+        result += 'Worker finalization script = %s\n' % self.fin_script
         result += 'Worker midstage source initialization scripts = %s\n' % self.mid_source
         result += 'Worker midstage finalization scripts = %s\n' % self.mid_script
         result += 'Process name overrides = %s\n' % self.process_name
