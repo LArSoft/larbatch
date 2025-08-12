@@ -2071,7 +2071,7 @@ fi
 # Run optional finalization script.
 
 if [ x$FINSCRIPT != x ]; then
-  echo "Running finalization script ${FINSCRIPT}."
+  echo "Running post-validation finalization script ${FINSCRIPT}."
   ./${FINSCRIPT}
   status=$?
   if [ $status -ne 0 ]; then
