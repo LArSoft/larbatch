@@ -49,6 +49,8 @@
 # [-h|--help]  - Print help (this message).
 # [-xh|--xmlhelp] - Print xml help.
 # --submit     - Submit all jobs for specified stage.
+# --[no-]rcds  - When combined with --submit, [do not] use RCDS to upload release tarball (if any).
+#                Default is to use RCDS.
 # --recur      - Input dataset is recursive.  Used in conjunction with --submit,
 #                allows job submission even if output directories are not empty.
 #                Also forces a new snapshot in case of input from sam.
@@ -2478,7 +2480,7 @@ def docheck_tape(dim):
 # Return jobsubid.
 # Raise exception if jobsub_submit returns a nonzero status.
 
-def dojobsub(project, stage, makeup, recur, dryrun, retain):
+def dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds):
 
     # Default return.
 
@@ -2618,7 +2620,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
     if not abssetupscript.startswith('/cvmfs/'):
         setupscript = os.path.join(stage.workdir,'setup_experiment.sh')
         larbatch_posix.copy(abssetupscript, setupscript)
-        jobsub_workdir_files_args.extend(['-f', setupscript])
+        jobsub_workdir_files_args.extend(['-f', 'dropbox://%s' % setupscript])
         abssetupscript = ''
 
     # Copy and rename batch script to the work directory.
@@ -3194,6 +3196,35 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
         command.append('--append_condor_requirements=\'(TARGET.HAS_CVMFS_%s_osgstorage_org==true)\'' % project_utilities.get_experiment())
     if stage.singularity != 0:
         command.append('--append_condor_requirements=\'(TARGET.HAS_SINGULARITY=?=true)\'')
+    if project.local_release_tar != '':
+        sz = os.stat(project.local_release_tar).st_size
+        print('Release tarball size = %d bytes.' % sz)
+
+        # Make sure release tarball isn't too big for RCDS.
+
+        if use_rcds and sz > 1024*1024*1024:
+            print('Release tarball is too big for RCDS.  Falling back to ifdh.')
+            use_rcds = False
+
+        # Make sure there is enough local space to use dropbox.
+
+        if use_rcds:
+            fname = 'test%s.dat' % uuid.uuid4()
+            try:
+                f = open(fname, 'wb')
+                f.truncate(2*sz)
+                f.close()
+            except:
+                print('Not enough local disk space to use dropbox.  Falling back to ifdh.')
+                use_rcds = False
+
+            if os.path.exists(fname):
+                os.remove(fname)
+
+        if use_rcds:
+            command.extend(['-f', 'dropbox://%s' % project.local_release_tar])
+        else:
+            command.extend(['-f', project.local_release_tar])
 
     # Batch script.
 
@@ -3348,7 +3379,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
 
         start_command.append('--group=%s' % project_utilities.get_experiment())
         if setupscript != '':
-            start_command.append('-f %s' % setupscript)
+            start_command.extend(['-f', 'dropbox://%s' % setupscript])
         #start_command.append('--role=%s' % role)
         if stage.resource != '':
             start_command.append('--resource-provides=usage_model=%s' % stage.resource)
@@ -3426,7 +3457,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
 
         stop_command.append('--group=%s' % project_utilities.get_experiment())
         if setupscript != '':
-            stop_command.append('-f %s' % setupscript)
+            stop_command.extend(['-f', 'dropbox://%s' % setupscript])
         #stop_command.append('--role=%s' % role)
         if stage.resource != '':
             stop_command.append('--resource-provides=usage_model=%s' % stage.resource)
@@ -3668,7 +3699,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
 
 # Submit/makeup action.
 
-def dosubmit(project, stage, makeup=False, recur=False, dryrun=False, retain=False):
+def dosubmit(project, stage, makeup=False, recur=False, dryrun=False, retain=False, use_rcds=True):
 
     # Make sure we have a kerberos ticket.
 
@@ -3725,7 +3756,7 @@ def dosubmit(project, stage, makeup=False, recur=False, dryrun=False, retain=Fal
 
     # Copy files to workdir and issue jobsub command to submit jobs.
 
-    jobid = dojobsub(project, stage, makeup, recur, dryrun, retain)
+    jobid = dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds)
 
     # Append jobid to file "jobids.list" in the log directory.
 
@@ -4014,6 +4045,7 @@ def main(argv):
     inputdef = ''
     merge = 0
     submit = 0
+    use_rcds = True
     recur = 0
     pubs = 0
     pubs_run = 0
@@ -4112,6 +4144,12 @@ def main(argv):
             del args[0:2]
         elif args[0] == '--submit':
             submit = 1
+            del args[0]
+        elif args[0] == '--rcds':
+            use_rcds = True
+            del args[0]
+        elif args[0] == '--no-rcds':
+            use_rcds = False
             del args[0]
         elif args[0] == '--recur':
             recur = 1
@@ -4589,7 +4627,7 @@ def main(argv):
                 print('Skipping job submission because similar job submission process is running.')
             else:
                 stage = stages[stagename]
-                dosubmit(project, stage, makeup, stage.recur, dryrun, retain)
+                dosubmit(project, stage, makeup, stage.recur, dryrun, retain, use_rcds)
 
     if check or checkana:
 

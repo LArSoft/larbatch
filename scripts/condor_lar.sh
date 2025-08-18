@@ -224,6 +224,7 @@ REL=""
 QUAL=""
 LOCALDIR=""
 LOCALTAR=""
+LOCALTARNAME=""
 INTERACTIVE=0
 GRP=""
 OUTDIR=""
@@ -496,6 +497,7 @@ while [ $# -gt 0 ]; do
     --localtar )
       if [ $# -gt 1 ]; then
         LOCALTAR=$2
+        LOCALTARNAME=`basename $LOCALTAR`
         shift
       fi
       ;;
@@ -880,7 +882,7 @@ echo "Scratch directory: $TMP"
 echo "No longer fetching files from work directory."
 echo "that's now done with using jobsub -f commands"
 mkdir work
-find $CONDOR_DIR_INPUT -follow -type f -exec cp {} work \;
+find $CONDOR_DIR_INPUT -follow -type f \! -name "$LOCALTARNAME" -exec cp {} work \;
 cd work
 find . -name \*.tar -exec tar xf {} \;
 find . -name \*.py -exec chmod +x {} \;
@@ -1067,26 +1069,35 @@ if [ x$LOCALTAR != x ]; then
   cd $TMP/local
 
   # Fetch the tarball.
+  # Tarball might have already been copied to $CONDOR_DIR_INPUT.
 
-  echo "Fetching test release tarball ${LOCALTAR}."
+  localtarpath=${CONDOR_DIR_INPUT}/$LOCALTARNAME
+  if [ -f $localtarpath ]; then
+    echo "Release tarball has already been copied."
+  else
 
-  # Make sure ifdhc is setup.
+    # Fetch the tarball.
 
-  if [ x$IFDHC_DIR = x ]; then
-    echo "Setting up ifdhc before fetching tarball."
-    setup ifdhc
+    echo "Fetching test release tarball ${LOCALTAR}."
+
+    # Make sure ifdhc is setup.
+
+    if [ x$IFDHC_DIR = x ]; then
+      echo "Setting up ifdhc before fetching tarball."
+      setup ifdhc
+    fi
+    echo "IFDHC_DIR=$IFDHC_DIR"
+    localtarpath=$LOCALTARNAME
+    ifdh cp $LOCALTAR $localtarpath
+    stat=$?
+    if [ $stat -ne 0 ]; then
+      echo "ifdh cp failed with status ${stat}."
+      exit $stat
+    fi 
   fi
-  echo "IFDHC_DIR=$IFDHC_DIR"
-  ifdh cp $LOCALTAR local.tar
-  stat=$?
-  if [ $stat -ne 0 ]; then
-    echo "ifdh cp failed with status ${stat}."
-    exit $stat
-  fi 
-
-  # Extract the tarball.
-
-  tar -xf local.tar
+  echo "Extracting test release tarball ${LOCALTAR}."
+  ls -l $localtarpath
+  tar -xf $localtarpath
 
   # Setup the environment.
 
