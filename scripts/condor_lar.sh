@@ -2072,7 +2072,10 @@ fi
 
 if [ x$FINSCRIPT != x ]; then
   echo "Running post-validation finalization script ${FINSCRIPT}."
+  curdir=`pwd`
+  cd $curdir/log
   ./${FINSCRIPT}
+  cd $curdir
   status=$?
   if [ $status -ne 0 ]; then
     exit $status
