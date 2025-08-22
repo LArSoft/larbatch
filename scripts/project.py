@@ -3200,31 +3200,28 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds):
         sz = os.stat(project.local_release_tar).st_size
         print('Release tarball size = %d bytes.' % sz)
 
-        # Make sure release tarball isn't too big for RCDS.
-
-        if use_rcds and sz > 1024*1024*1024:
-            print('Release tarball is too big for RCDS.  Falling back to ifdh.')
-            use_rcds = False
-
         # Make sure there is enough local space to use dropbox.
 
         if use_rcds:
             fname = 'test%s.dat' % uuid.uuid4()
             try:
                 f = open(fname, 'wb')
-                f.truncate(2*sz)
+                f.truncate(sz)
                 f.close()
             except:
-                print('Not enough local disk space to use dropbox.  Falling back to ifdh.')
-                use_rcds = False
-
+                print('Not enough local disk space to use dropbox.')
+                print('Resubmit from a working directory with more available space, or resubmit using option --no-rcds.')
+                sys.exit(1)
             if os.path.exists(fname):
                 os.remove(fname)
 
         if use_rcds:
-            command.extend(['-f', 'dropbox://%s' % project.local_release_tar])
+            command.extend(['--tar-file-name', 'dropbox://%s' % project.local_release_tar])
         else:
             command.extend(['-f', project.local_release_tar])
+
+    if project.local_release_dir != '':
+        command.extend(['--tar-file-name', 'tardir://%s' % project.local_release_dir])
 
     # Batch script.
 
@@ -3249,7 +3246,8 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds):
         command.extend([' -r', project.release_tag])
     command.extend([' -b', project.release_qual])
     if project.local_release_dir != '':
-        command.extend([' --localdir', project.local_release_dir])
+        # Add a placeholder file type / extension.
+        command.extend([' --localtar', '%s.tgz' % project.local_release_dir])
     if project.local_release_tar != '':
         command.extend([' --localtar', project.local_release_tar])
     command.extend([' --workdir', stage.workdir])
