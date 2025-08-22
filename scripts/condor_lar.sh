@@ -61,7 +61,6 @@
 # --ups <arg>             - Comma-separated list of top level run-time ups products.
 # -r, --release <arg>     - Release tag.
 # -q, -b, --build <arg>   - Release build qualifier (default "debug", or "prof").
-# --localdir <arg>        - Larsoft local test release directory (default none).
 # --localtar <arg>        - Tarball of local test release.
 # --mrb                   - Ignored (for compatibility).
 # --srt                   - Exit with error status (SRT run time no longer supported).
@@ -93,22 +92,13 @@
 #
 # Run time environment setup.
 #
-# MRB run-time environmental setup is controlled by four options:
-#  --release (-r), --build (-b, -q), --localdir, and --localtar.  
+# MRB run-time environmental setup is controlled by three options:
+#  --release (-r), --build (-b, -q), and --localtar.  
 #
 # a) Use option --release or -r to specify version of top-level product(s).  
 # b) Use option --build or -b to specify build full qualifiers (e.g. 
 #    "debug:e5" or "e5:prof").
-# c) Options --localdir or --localtar are used to specify your local
-#    test release.  Use one or the other (not both).
-#
-#    Use --localdir to specify the location of your local install
-#    directory ($MRB_INSTALL).
-#
-#    Use --localtar to specify thye location of a tarball of your
-#    install directory (made relative to $MRB_INSTALL).
-#
-#    Note that --localdir is not grid-friendly.
+# c) Option --localtar are used to specify your local test release.
 #
 # Notes.
 #
@@ -124,12 +114,7 @@
 #     work directory are copied to the batch worker scratch directory at
 #     the start of the job.
 #
-# 3.  A local test release may be specified as an absolute path using
-#     --localdir, or a tarball using --localtar.  The location of the tarball
-#     may be specified as an absolute path visible on the worker, or a 
-#     relative path relative to the work directory.
-#
-# 4.  The output directory must exist and be writable by the batch
+# 3.  The output directory must exist and be writable by the batch
 #     worker (i.e. be group-writable for grid jobs).  The worker
 #     makes a new subdirectory called ${CLUSTER}_${PROCESS} in the output
 #     directory and copies all files in the batch scratch directory there 
@@ -137,7 +122,7 @@
 #     default is /grid/data/<group>/outstage/<user> (user is defined as 
 #     owner of work directory).
 #
-# 5.  Parallel projects are specified whenever --njobs is specified to
+# 4.  Parallel projects are specified whenever --njobs is specified to
 #     be greater than one.  Parallel projects are supported for single file,
 #     file list, and sam project input.
 #
@@ -165,7 +150,7 @@
 #     scratch directory and deletes processed input files during job execution.
 #
 #
-# 6.  Using option -n or --nevts to limit number of events processed: 
+# 5.  Using option -n or --nevts to limit number of events processed: 
 #
 #     a) If no input files are specified (e.g. mc generation), --nevts
 #        specifies total number of events among all workers.
@@ -174,13 +159,13 @@
 #        events processed by each worker or from each input file, whichever
 #        is less.
 #
-# 7.  The interactive option (-i or --interactive) allows this script
+# 6.  The interactive option (-i or --interactive) allows this script
 #     to be run interactively by overriding some settings that are normally
 #     obtained from the batch system, including $CLUSTER, $PROCESS, and
 #     the scratch directory.  Interactive jobs always set PROCESS=0 (unless
 #     overridden by --process).
 #
-# 8. Mix options (--mix_defname, --mix_project) are only partially handled
+# 7. Mix options (--mix_defname, --mix_project) are only partially handled
 #    in this script.  These options are parsed and their values are stored
 #    in shell variables.  It is assumed that the sam project specified
 #    by --mix_project has been started externally, unless --sam_start is
@@ -190,7 +175,7 @@
 #    command line options or fcl wrappers) should be handled by user
 #    provided initialization scripts (--init-script, --init-source).
 #
-# 9. Option --init <path> is optional.  If specified, it should point to
+# 8. Option --init <path> is optional.  If specified, it should point to
 #    the absolute path of the experiment environment initialization script,
 #    which path must be visible from the batch worker (e.g. /cvmfs/...).
 #    If this option is not specified, this script will look for and source
@@ -222,8 +207,8 @@ ARGS=""
 UPS_PRDS=""
 REL=""
 QUAL=""
-LOCALDIR=""
 LOCALTAR=""
+LOCALTARBASE=""
 LOCALTARNAME=""
 INTERACTIVE=0
 GRP=""
@@ -485,19 +470,12 @@ while [ $# -gt 0 ]; do
       fi
       ;;
 
-    # Local test release directory.
-    --localdir )
-      if [ $# -gt 1 ]; then
-        LOCALDIR=$2
-        shift
-      fi
-      ;;
-
     # Local test release tarball.
     --localtar )
       if [ $# -gt 1 ]; then
         LOCALTAR=$2
-        LOCALTARNAME=`basename $LOCALTAR`
+        LOCALTARBASE=`basename $LOCALTAR`
+        LOCALTARNAME=${LOCALTARBASE%.*}
         shift
       fi
       ;;
@@ -715,8 +693,9 @@ done
 #echo "ARGS=$ARGS"
 #echo "REL=$REL"
 #echo "QUAL=$QUAL"
-#echo "LOCALDIR=$LOCALDIR"
 #echo "LOCALTAR=$LOCALTAR"
+#echo "LOCALTARBASE=$LOCALTARBASE"
+#echo "LOCALTARNAME=$LOCALTARNAME"
 #echo "INTERACTIVE=$INTERACTIVE"
 #echo "GRP=$GRP"
 #echo "OUTDIR=$OUTDIR"
@@ -781,9 +760,9 @@ echo "UPS_OVERRIDE: $UPS_OVERRIDE"
 
 echo "Condor dir input: $CONDOR_DIR_INPUT"
 
-# Initialize experiment ups products and mrb.
+# Initialize ups.
 
-echo "Initializing ups and mrb."
+echo "Initializing ups."
 
 if [ x$INIT != x ]; then
   if [ ! -f $INIT ]; then
@@ -878,11 +857,13 @@ cd $TMP
 echo "Scratch directory: $TMP"
 
 # Copy files from work directory to scratch directory.
+# Don't copy local release tarball, if any.
 
-echo "No longer fetching files from work directory."
-echo "that's now done with using jobsub -f commands"
 mkdir work
-find $CONDOR_DIR_INPUT -follow -type f \! -name "$LOCALTARNAME" -exec cp {} work \;
+echo 'ls -l $CONDOR_DIR_INPUT'
+ls -l $CONDOR_DIR_INPUT
+echo
+find $CONDOR_DIR_INPUT -follow -name "$LOCALTARNAME" -prune -o -type f \! -name "$LOCALTARBASE" -exec cp {} work \;
 cd work
 find . -name \*.tar -exec tar xf {} \;
 find . -name \*.py -exec chmod +x {} \;
@@ -998,141 +979,54 @@ if [ x$MIDSCRIPT != x ]; then
   fi
 fi
 
-# MRB run time environment setup goes here.
-
-# Setup local test release, if any.
-
-if [ x$LOCALDIR != x ]; then
-  mkdir $TMP/local
-  cd $TMP/local
-
-  # Copy test release directory recursively.
-
-  echo "Copying local test release from directory ${LOCALDIR}."
-
-  # Make sure ifdhc is setup.
-
-  if [ x$IFDHC_DIR = x ]; then
-    echo "Setting up ifdhc before fetching local directory."
-    setup ifdhc
-  fi
-  echo "IFDHC_DIR=$IFDHC_DIR"
-  ifdh cp -r $IFDH_OPT $LOCALDIR .
-  stat=$?
-  if [ $stat -ne 0 ]; then
-    echo "ifdh cp failed with status ${stat}."
-    exit $stat
-  fi
-  find . -name \*.py -exec chmod +x {} \;
-  find . -name \*.sh -exec chmod +x {} \;
-
-  # Setup the environment.
-
-  cd $TMP/work
-  echo "Initializing localProducts from ${LOCALDIR}."
-  if [ ! -f $TMP/local/setup ]; then
-    echo "Local test release directory $LOCALDIR does not contain a setup script."
-    exit 1
-  fi
-  sed "s@setenv MRB_INSTALL.*@setenv MRB_INSTALL ${TMP}/local@" $TMP/local/setup | \
-  sed "s@setenv MRB_TOP.*@setenv MRB_TOP ${TMP}@" > $TMP/local/setup.local
-
-  # Make sure we have the correct version of mrb setup 
-
-  if grep -q bin/shell_independence $TMP/local/setup.local; then
-
-    # This is an old style working area.
-    # Set up old version of mrb.
-
-    echo "Setting up old version of mrb."
-    unsetup mrb
-    setup mrb -o
-  fi
-
-  # Do local setup
-
-  . $TMP/local/setup.local
-  #echo "MRB_INSTALL=${MRB_INSTALL}."
-  #echo "MRB_QUALS=${MRB_QUALS}."
-  #echo "Setting up all localProducts."
-  #if [ x$IFDHC_DIR != x ]; then
-  #  unsetup ifdhc
-  #fi
-  #mrbslp
-fi
-cd $TMP/work
+# UPS run time environment setup goes here.
 
 # Setup local larsoft test release from tarball.
+# This section handles the following cases.
+# 1.  Contents of tarball were transferred using RCDS using option --tar-file-name.
+# 2.  File $LOCALTARBASE exists in directory $CONDOR_DIR_INPUT.
+#
+# In case 1, the unpacked tarball contents are available in cvmfs, and can
+# be found using a symbolic link from $CONDOR_DIR_INPUT
+#
+# In case 2, the tarball must still be unpacked in a newly created local directory.
 
 if [ x$LOCALTAR != x ]; then
-  mkdir $TMP/local
-  cd $TMP/local
 
-  # Fetch the tarball.
-  # Tarball might have already been copied to $CONDOR_DIR_INPUT.
+  installdir=''
 
-  localtarpath=${CONDOR_DIR_INPUT}/$LOCALTARNAME
-  if [ -f $localtarpath ]; then
-    echo "Release tarball has already been copied."
+  # Look for tarball copied using --tar-file-name.
+
+  if [ -L ${CONDOR_DIR_INPUT}/$LOCALTARNAME ]; then
+    installdir=${CONDOR_DIR_INPUT}/$LOCALTARNAME
+    echo "Local release tarball found at path $installdir"
+
+  # Look for tarball copied using -f.
+
+  elif [ -f ${CONDOR_DIR_INPUT}/$LOCALTARBASE ]; then
+    tarpath=${CONDOR_DIR_INPUT}/$LOCALTARBASE
+    echo "Local release tarball found at path $tarpath"
+    echo "Local release tarball will be unpacked in $TMP/local."
+    installdir=$TMP/local
+    mkdir $installdir
+    cd $installdir
+    tar -xf $tarpath
+
   else
+    echo "Local release tarball not found."
+    exit 1
 
-    # Fetch the tarball.
-
-    echo "Fetching test release tarball ${LOCALTAR}."
-
-    # Make sure ifdhc is setup.
-
-    if [ x$IFDHC_DIR = x ]; then
-      echo "Setting up ifdhc before fetching tarball."
-      setup ifdhc
-    fi
-    echo "IFDHC_DIR=$IFDHC_DIR"
-    localtarpath=$LOCALTARNAME
-    ifdh cp $LOCALTAR $localtarpath
-    stat=$?
-    if [ $stat -ne 0 ]; then
-      echo "ifdh cp failed with status ${stat}."
-      exit $stat
-    fi 
-  fi
-  echo "Extracting test release tarball ${LOCALTAR}."
-  ls -l $localtarpath
-  tar -xf $localtarpath
-
-  # Setup the environment.
-
-  cd $TMP/work
-  echo "Initializing localProducts from tarball ${LOCALTAR}."
-  sed "s@setenv MRB_INSTALL.*@setenv MRB_INSTALL ${TMP}/local@" $TMP/local/setup | \
-  sed "s@setenv MRB_TOP.*@setenv MRB_TOP ${TMP}@" > $TMP/local/setup.local
-
-  # Make sure we have the correct version of mrb setup 
-
-  if grep -q bin/shell_independence $TMP/local/setup.local; then
-
-    # This is an old style working area.
-    # Set up old version of mrb.
-
-    echo "Setting up old version of mrb."
-    unsetup mrb
-    setup mrb -o
   fi
 
-  # Do local setup
+  # Add local products to ups environment, by prepending to $PRODUCTS.
 
-  . $TMP/local/setup.local
-  #echo "MRB_INSTALL=${MRB_INSTALL}."
-  #echo "MRB_QUALS=${MRB_QUALS}."
-  #echo "Setting up all localProducts."
-  #if [ x$IFDHC_DIR != x ]; then
-  #  unsetup ifdhc
-  #fi
-  #mrbslp
+  export PRODUCTS=${installdir}:$PRODUCTS
 fi
 
 # Setup specified version of top level run time products
-# (if specified, and if local test release did not set them up).
 
+echo
+echo "PRODUCTS=$PRODUCTS"
 for prd in `echo $UPS_PRDS | tr , ' '`
 do
   if ! ups active | grep -q $prd; then
@@ -1148,7 +1042,7 @@ ups active
 
 cd $TMP/work
 
-# In case mrb setup didn't setup a version of ifdhc, set up ifdhc again.
+# Make sure ifdhc has been set up.
 
 if [ x$IFDHC_DIR = x ]; then
   echo "Setting up ifdhc again, because larsoft did not set it up."
