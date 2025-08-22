@@ -623,7 +623,7 @@ while [ $# -gt 0 ]; do
         shift
       fi
       ;;
-    
+
     # User finalization script.
     --fin-script )
       if [ $# -gt 1 ]; then
@@ -2060,26 +2060,16 @@ if [ $VALIDATE_IN_JOB -eq 1 ]; then
       for ftype in ${DATAFILETYPES[*]}; do
         dataopt="$dataopt --data_file_type $ftype"
       done
+      finopt=''
+      if [ x$FINSCRIPT != x ]; then
+        finopt="--finscript $FINSCRIPT"
+      fi
       echo "./validate_in_job.py --dir $curdir/out --logfiledir $curdir/log --outdir $OUTDIR/$OUTPUT_SUBDIR --declare $DECLARE_IN_JOB --copy $COPY_TO_FTS --maintain_parentage $MAINTAIN_PARENTAGE $dataopt"
-      ./validate_in_job.py --dir $curdir/out --logfiledir $curdir/log --outdir $OUTDIR/$OUTPUT_SUBDIR --declare $DECLARE_IN_JOB --copy $COPY_TO_FTS --maintain_parentage $MAINTAIN_PARENTAGE $dataopt
+      ./validate_in_job.py --dir $curdir/out --logfiledir $curdir/log --outdir $OUTDIR/$OUTPUT_SUBDIR --declare $DECLARE_IN_JOB --copy $COPY_TO_FTS --maintain_parentage $MAINTAIN_PARENTAGE $dataopt $finopt
       valstat=$?
       cd $curdir
     fi
 
-fi
-
-# Run optional finalization script.
-
-if [ x$FINSCRIPT != x ]; then
-  echo "Running post-validation finalization script ${FINSCRIPT}."
-  curdir=`pwd`
-  cd $curdir/log
-  ./${FINSCRIPT}
-  cd $curdir
-  status=$?
-  if [ $status -ne 0 ]; then
-    exit $status
-  fi
 fi
 
 # Make a tarball of the log directory contents, and save the tarball in the log directory.

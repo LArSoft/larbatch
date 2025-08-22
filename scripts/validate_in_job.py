@@ -8,7 +8,7 @@
 # Options:
 #
 # --dir <dir>     - Directory containing .root files on batch worker.
-# --logdir <dir>  - Log file directory on batch worker (lar.stat and .json files).
+# --logfiledir <dir> - Log file directory on batch worker (lar.stat and .json files).
 # --outdir <dir>  - Final output directory (e.g. dCache) where .root files will be copied.
 # --declare <0/1> - Flag for declaring files to sam.
 # --copy <0/1>    - Flag for copyoing files directly to dropbox.
@@ -17,6 +17,7 @@
 # --data_file_type - Specify data file type (repeatable, default "root").
 # --parents <file> - File containing parent files (same as $JOBS_PARENTS).
 # --aunts <file>   - File containing aunt files (same as $JOBS_AUNTS).
+# --finscript <script> - Run specified finalization script.
 #
 # Environment variables:
 #
@@ -172,6 +173,7 @@ def main():
     data_file_types = []
     parents_file = ''
     aunts_file = ''
+    finscript = ''
     args = sys.argv[1:]
     while len(args) > 0:
 
@@ -201,6 +203,9 @@ def main():
             del args[0:2]
         elif args[0] == '--aunts' and len(args) > 1:
             aunts_file = args[1]
+            del args[0:2]
+        elif args[0] == '--finscript' and len(args) > 1:
+            finscript = args[1]
             del args[0:2]
         else:
             print('Unknown option %s' % args[0])
@@ -419,6 +424,13 @@ def main():
                         print('No sam metadata found for %s.' % fn)
                         declare_ok = False
                         status = 1
+
+                if declare_ok:
+
+                    # If sam declaration is OK, run final check script before
+                    # (possibly) copying file to dropbox.
+
+                    print('Running final checks on file %s' % fn)
              
                 if copy_to_dropbox == 1 and declare_ok:
                     print("Copying to Dropbox")
