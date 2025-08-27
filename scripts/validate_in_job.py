@@ -586,6 +586,8 @@ def main():
                     # Run final checking script.
 
                     print('Running post-declaration checking script %s' % finscript)
+                    sys.stdout.flush()
+                    sys.stderr.flush()
                     st = subprocess.run('../%s' % finscript)
                     rc = st.returncode
                     print('%s completed with status %d.' % (finscript, rc))
