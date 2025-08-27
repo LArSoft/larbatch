@@ -27,7 +27,7 @@
 #=================================================================================
 from __future__ import absolute_import
 from __future__ import print_function
-import sys, os, json
+import sys, os, json, tempfile, shutil, subprocess
 from larbatch_utilities import ifdh_cp
 import project_utilities
 import samweb_cli
@@ -47,6 +47,7 @@ def check_root_file(path, logdir):
     result = (-2, '')
     json_ok = False
     md = []
+    print('Checking %s' % os.path.basename(path))
 
     # First check if root file exists (error if not).
 
@@ -425,13 +426,42 @@ def main():
                         declare_ok = False
                         status = 1
 
-                if declare_ok:
+                if declare_ok and finscript != '':
 
                     # If sam declaration is OK, run final check script before
                     # (possibly) copying file to dropbox.
 
                     print('Running final checks on file %s' % fn)
-             
+
+                    # Create a new empty temporary directory and cd there.
+
+                    curdir = os.getcwd()
+                    tempdir = tempfile.mkdtemp(dir=curdir)
+                    print('Making temporary directory %s' % tempdir)
+                    os.chdir(tempdir)
+
+                    # Make a symbolic link from rootpath to the new directory.
+
+                    os.symlink(rootpath, fn)
+
+                    # Run final checking script.
+
+                    print('Running post-declaration checking script %s' % finscript)
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    st = subprocess.run('../%s' % finscript)
+                    rc = st.returncode
+                    print('%s completed with status %d.' % (finscript, rc))
+                    if rc != 0:
+                        declare_ok = False
+                        status = 1
+
+                    # Cd back to the original current directory and delete the temporary directory.
+
+                    print('Deleting temporary directory %s' % tempdir)
+                    os.chdir(curdir)
+                    shutil.rmtree(tempdir)                    
+
                 if copy_to_dropbox == 1 and declare_ok:
                     print("Copying to Dropbox")
                     dropbox_dir = project_utilities.get_dropbox(fn)
@@ -535,6 +565,40 @@ def main():
                         print('No sam metadata found for %s.' % fn)
                         declare_ok = False
              
+                if declare_ok and finscript != '':
+
+                    # If sam declaration is OK, run final check script before
+                    # (possibly) copying file to dropbox.
+
+                    print('Running final checks on file %s' % fn)
+
+                    # Create a new empty temporary directory and cd there.
+
+                    curdir = os.getcwd()
+                    tempdir = tempfile.mkdtemp(dir=curdir)
+                    print('Making temporary directory %s' % tempdir)
+                    os.chdir(tempdir)
+
+                    # Make a symbolic link from histpath to the new directory.
+
+                    os.symlink(histpath, fn)
+
+                    # Run final checking script.
+
+                    print('Running post-declaration checking script %s' % finscript)
+                    st = subprocess.run('../%s' % finscript)
+                    rc = st.returncode
+                    print('%s completed with status %d.' % (finscript, rc))
+                    if rc != 0:
+                        declare_ok = False
+                        status = 1
+
+                    # Cd back to the original current directory and delete the temporary directory.
+
+                    print('Deleting temporary directory %s' % tempdir)
+                    os.chdir(curdir)
+                    shutil.rmtree(tempdir)                    
+
                 if copy_to_dropbox == 1 and declare_ok:
                     print("Copying to Dropbox")
                     dropbox_dir = project_utilities.get_dropbox(fn)

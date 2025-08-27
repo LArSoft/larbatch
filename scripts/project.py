@@ -2799,7 +2799,7 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain):
             f.write('echo\n')
             f.write('echo "Executing %s"\n' % os.path.basename(fin_script[0]))
             if larbatch_posix.exists(fin_script[0]):
-                f.write('./%s' % os.path.basename(fin_script[0]))
+                f.write('../%s' % os.path.basename(fin_script[0]))
             else:
                 f.write(os.path.basename(fin_script[0]))
             if len(fin_script) > 1:
