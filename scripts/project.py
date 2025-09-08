@@ -370,6 +370,8 @@
 # <stage><initscript> - Worker initialization script (condor_lar.sh --init-script).  Repeatable.
 # <stage><initsource> - Worker initialization bash source script (condor_lar.sh --init-source).
 # <stage><endscript>  - Worker finalization script (condor_lar.sh --end-script).  Repeatable.
+# <stage><finscript>  - Worker finalization script (condor_lar.sh --fin-script).  Repeatable.
+#                       Runs after final checks on output file(s) (later than endscript).
 # <stage><merge>  - Name of special histogram merging program or script (default "hadd -T",
 #                   can be overridden at each stage).
 #                   Set to "1" to generate merging metadata for artroot files.
@@ -425,7 +427,7 @@
 # <stage><fcl> - Name of fcl file.  This should come first within each <fcl> element
 #                before additional substage subelements.
 # <stage><fcl><initsource> - Initialization source script for this substage.
-# <stage><fcl><endstage> - Finalization script for this substage.
+# <stage><fcl><endscript> - Finalization script for this substage.
 # <stage><fcl><exe> - Executable to use in this substage (default "lar").
 # <stage><fcl><output> - Output file name for this substage.
 # <stage><fcl><processname> - Override fcl parameter "process_name:" in fcl wrapper.
@@ -2773,6 +2775,48 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds):
         f.close()
         stage.end_script = work_end_wrapper
 
+    # Copy worker finalization scripts to work directory.
+
+    for fin_script in stage.fin_script:
+        if len(fin_script) > 0:
+            if larbatch_posix.exists(fin_script[0]):
+                work_fin_script = os.path.join(tmpworkdir, os.path.basename(fin_script[0]))
+                if fin_script[0] != work_fin_script:
+                    larbatch_posix.copy(fin_script[0], work_fin_script)
+
+    # Update stage.fin_script from list to single script.
+
+    n = len(stage.fin_script)
+    if n == 0:
+        stage.fin_script = ''
+    else:
+
+        # If there are finalization scripts, generate a wrapper finalization script
+        # fin_wrapper.sh.
+
+        work_fin_wrapper = os.path.join(tmpworkdir, 'fin_wrapper.sh')
+        f = open(work_fin_wrapper, 'w')
+        f.write('#! /bin/bash\n')
+        for fin_script in stage.fin_script:
+            f.write('echo\n')
+            f.write('echo "Executing %s"\n' % os.path.basename(fin_script[0]))
+            if larbatch_posix.exists(fin_script[0]):
+                f.write('../%s' % os.path.basename(fin_script[0]))
+            else:
+                f.write(os.path.basename(fin_script[0]))
+            if len(fin_script) > 1:
+                f.write(' %s' % ' '.join(fin_script[1:]))
+            f.write('\n')
+            f.write('status=$?\n')
+            f.write('echo "%s finished with status $status"\n' % os.path.basename(fin_script[0]))
+            f.write('if [ $status -ne 0 ]; then\n')
+            f.write('  exit $status\n')
+            f.write('fi\n')
+        f.write('echo\n')
+        f.write('echo "Done executing finalization scripts."\n')
+        f.close()
+        stage.fin_script = work_fin_wrapper
+
     # Copy worker midstage source initialization scripts to work directory.
 
     for istage in stage.mid_source:
@@ -3311,6 +3355,8 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds):
         command.extend([' --init-source', os.path.basename(stage.init_source)])
     if stage.end_script != '':
         command.extend([' --end-script', os.path.basename(stage.end_script)])
+    if stage.fin_script != '':
+        command.extend([' --fin-script', os.path.basename(stage.fin_script)])
     if stage.mid_source != '':
         command.extend([' --mid-source', os.path.basename(stage.mid_source)])
     if stage.mid_script != '':

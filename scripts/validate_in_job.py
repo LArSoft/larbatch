@@ -8,7 +8,7 @@
 # Options:
 #
 # --dir <dir>     - Directory containing .root files on batch worker.
-# --logdir <dir>  - Log file directory on batch worker (lar.stat and .json files).
+# --logfiledir <dir> - Log file directory on batch worker (lar.stat and .json files).
 # --outdir <dir>  - Final output directory (e.g. dCache) where .root files will be copied.
 # --declare <0/1> - Flag for declaring files to sam.
 # --copy <0/1>    - Flag for copyoing files directly to dropbox.
@@ -17,6 +17,7 @@
 # --data_file_type - Specify data file type (repeatable, default "root").
 # --parents <file> - File containing parent files (same as $JOBS_PARENTS).
 # --aunts <file>   - File containing aunt files (same as $JOBS_AUNTS).
+# --finscript <script> - Run specified finalization script.
 #
 # Environment variables:
 #
@@ -26,7 +27,7 @@
 #=================================================================================
 from __future__ import absolute_import
 from __future__ import print_function
-import sys, os, json
+import sys, os, json, tempfile, shutil, subprocess
 from larbatch_utilities import ifdh_cp
 import project_utilities
 import samweb_cli
@@ -46,6 +47,7 @@ def check_root_file(path, logdir):
     result = (-2, '')
     json_ok = False
     md = []
+    print('Checking %s' % os.path.basename(path))
 
     # First check if root file exists (error if not).
 
@@ -172,6 +174,7 @@ def main():
     data_file_types = []
     parents_file = ''
     aunts_file = ''
+    finscript = ''
     args = sys.argv[1:]
     while len(args) > 0:
 
@@ -201,6 +204,9 @@ def main():
             del args[0:2]
         elif args[0] == '--aunts' and len(args) > 1:
             aunts_file = args[1]
+            del args[0:2]
+        elif args[0] == '--finscript' and len(args) > 1:
+            finscript = args[1]
             del args[0:2]
         else:
             print('Unknown option %s' % args[0])
@@ -419,7 +425,43 @@ def main():
                         print('No sam metadata found for %s.' % fn)
                         declare_ok = False
                         status = 1
-             
+
+                if declare_ok and finscript != '':
+
+                    # If sam declaration is OK, run final check script before
+                    # (possibly) copying file to dropbox.
+
+                    print('Running final checks on file %s' % fn)
+
+                    # Create a new empty temporary directory and cd there.
+
+                    curdir = os.getcwd()
+                    tempdir = tempfile.mkdtemp(dir=curdir)
+                    print('Making temporary directory %s' % tempdir)
+                    os.chdir(tempdir)
+
+                    # Make a symbolic link from rootpath to the new directory.
+
+                    os.symlink(rootpath, fn)
+
+                    # Run final checking script.
+
+                    print('Running post-declaration checking script %s' % finscript)
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    st = subprocess.run('../%s' % finscript)
+                    rc = st.returncode
+                    print('%s completed with status %d.' % (finscript, rc))
+                    if rc != 0:
+                        declare_ok = False
+                        status = 1
+
+                    # Cd back to the original current directory and delete the temporary directory.
+
+                    print('Deleting temporary directory %s' % tempdir)
+                    os.chdir(curdir)
+                    shutil.rmtree(tempdir)                    
+
                 if copy_to_dropbox == 1 and declare_ok:
                     print("Copying to Dropbox")
                     dropbox_dir = project_utilities.get_dropbox(fn)
@@ -523,6 +565,42 @@ def main():
                         print('No sam metadata found for %s.' % fn)
                         declare_ok = False
              
+                if declare_ok and finscript != '':
+
+                    # If sam declaration is OK, run final check script before
+                    # (possibly) copying file to dropbox.
+
+                    print('Running final checks on file %s' % fn)
+
+                    # Create a new empty temporary directory and cd there.
+
+                    curdir = os.getcwd()
+                    tempdir = tempfile.mkdtemp(dir=curdir)
+                    print('Making temporary directory %s' % tempdir)
+                    os.chdir(tempdir)
+
+                    # Make a symbolic link from histpath to the new directory.
+
+                    os.symlink(histpath, fn)
+
+                    # Run final checking script.
+
+                    print('Running post-declaration checking script %s' % finscript)
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    st = subprocess.run('../%s' % finscript)
+                    rc = st.returncode
+                    print('%s completed with status %d.' % (finscript, rc))
+                    if rc != 0:
+                        declare_ok = False
+                        status = 1
+
+                    # Cd back to the original current directory and delete the temporary directory.
+
+                    print('Deleting temporary directory %s' % tempdir)
+                    os.chdir(curdir)
+                    shutil.rmtree(tempdir)                    
+
                 if copy_to_dropbox == 1 and declare_ok:
                     print("Copying to Dropbox")
                     dropbox_dir = project_utilities.get_dropbox(fn)

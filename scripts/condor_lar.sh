@@ -83,6 +83,7 @@
 # --init-script <arg>     - User initialization script execute.
 # --init-source <arg>     - User initialization script to source (bash).
 # --end-script <arg>      - User end-of-job script to execute.
+# --fin-script <arg>      - User finalization script to execute.
 # --mid-source <arg>      - User midstage initialization script to source.
 # --mid-script <arg>      - User midstage finalization script to execute.
 # --exe <arg>             - Specify art-like executable (default "lar").
@@ -223,6 +224,7 @@ PROCMAP=""
 INITSCRIPT=""
 INITSOURCE=""
 ENDSCRIPT=""
+FINSCRIPT=""
 MIDSOURCE=""
 MIDSCRIPT=""
 SAM_USER=$GRID_USER
@@ -601,6 +603,14 @@ while [ $# -gt 0 ]; do
         shift
       fi
       ;;
+
+    # User finalization script.
+    --fin-script )
+      if [ $# -gt 1 ]; then
+        FINSCRIPT=$2
+        shift
+      fi
+      ;;
     
     # User midstage initialization source script.
     --mid-source )
@@ -706,6 +716,7 @@ done
 #echo "INITSCRIPT=$INITSCRIPT"
 #echo "INITSOURCE=$INITSOURCE"
 #echo "ENDSCRIPT=$ENDSCRIPT"
+#echo "FINSCRIPT=$FINSCRIPT"
 #echo "MIDSOURCE=$MIDSOURCE"
 #echo "MIDSCRIPT=$MIDSCRIPT"
 #echo "VALIDATE_IN_JOB=$VALIDATE_IN_JOB"
@@ -957,6 +968,17 @@ if [ x$ENDSCRIPT != x ]; then
     chmod +x $ENDSCRIPT
   else
     echo "Finalization script $ENDSCRIPT does not exist."
+    exit 1
+  fi
+fi
+
+# Make sure finalization script exists and is executable (if specified).
+
+if [ x$FINSCRIPT != x ]; then
+  if [ -f "$FINSCRIPT" ]; then
+    chmod +x $FINSCRIPT
+  else
+    echo "Finalization script $FINSCRIPT does not exist."
     exit 1
   fi
 fi
@@ -1943,8 +1965,12 @@ if [ $VALIDATE_IN_JOB -eq 1 ]; then
       for ftype in ${DATAFILETYPES[*]}; do
         dataopt="$dataopt --data_file_type $ftype"
       done
-      echo "./validate_in_job.py --dir $curdir/out --logfiledir $curdir/log --outdir $OUTDIR/$OUTPUT_SUBDIR --declare $DECLARE_IN_JOB --copy $COPY_TO_FTS --maintain_parentage $MAINTAIN_PARENTAGE $dataopt"
-      ./validate_in_job.py --dir $curdir/out --logfiledir $curdir/log --outdir $OUTDIR/$OUTPUT_SUBDIR --declare $DECLARE_IN_JOB --copy $COPY_TO_FTS --maintain_parentage $MAINTAIN_PARENTAGE $dataopt
+      finopt=''
+      if [ x$FINSCRIPT != x ]; then
+        finopt="--finscript $FINSCRIPT"
+      fi
+      echo "./validate_in_job.py --dir $curdir/out --logfiledir $curdir/log --outdir $OUTDIR/$OUTPUT_SUBDIR --declare $DECLARE_IN_JOB --copy $COPY_TO_FTS --maintain_parentage $MAINTAIN_PARENTAGE $dataopt $finopt"
+      ./validate_in_job.py --dir $curdir/out --logfiledir $curdir/log --outdir $OUTDIR/$OUTPUT_SUBDIR --declare $DECLARE_IN_JOB --copy $COPY_TO_FTS --maintain_parentage $MAINTAIN_PARENTAGE $dataopt $finopt
       valstat=$?
       cd $curdir
     fi
