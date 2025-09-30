@@ -477,7 +477,13 @@ while [ $# -gt 0 ]; do
       if [ $# -gt 1 ]; then
         LOCALTAR=$2
         LOCALTARBASE=`basename $LOCALTAR`
-        LOCALTARNAME=${LOCALTARBASE%.*}
+        LOCALTARNAME=${LOCALTARBASE%%.*}
+        if [ ! -e "${CONDOR_DIR_INPUT}/$LOCALTARNAME" ]; then
+          newname=`ls $CONDOR_DIR_INPUT | grep $LOCALTARNAME | head -1`
+          if [ -e "${CONDOR_DIR_INPUT}/$newname" ]; then
+            LOCALTARNAME=$newname
+          fi
+        fi
         shift
       fi
       ;;
@@ -874,6 +880,7 @@ mkdir work
 echo 'ls -l $CONDOR_DIR_INPUT'
 ls -l $CONDOR_DIR_INPUT
 echo
+env | grep INPUT_TAR
 find $CONDOR_DIR_INPUT -follow -name "$LOCALTARNAME" -prune -o -type f \! -name "$LOCALTARBASE" -exec cp {} work \;
 cd work
 find . -name \*.tar -exec tar xf {} \;
