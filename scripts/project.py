@@ -2616,14 +2616,30 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds):
     # Get experiment setup script.  Maybe copy to work directory.
     # After this section, either variable (not both) abssetupscript or
     # setupscript will be set to a non-null value.
+    
+    # If project xml element 'spackinstance' is set, set abssetupscript to
+    # point to file 'setup-env.sh' in the path directory.
+    # It is an error if the spack instance path does not start with '/cvmfs/',
+    # or if the path directory does not contain file 'setup-env.sh'.
 
-    abssetupscript = project_utilities.get_setup_script_path()
+    abssetupscript = ''
     setupscript = ''
-    if not abssetupscript.startswith('/cvmfs/'):
-        setupscript = os.path.join(stage.workdir,'setup_experiment.sh')
-        larbatch_posix.copy(abssetupscript, setupscript)
-        jobsub_workdir_files_args.extend(['-f', 'dropbox://%s' % setupscript])
-        abssetupscript = ''
+
+    if project.spack_instance != '':
+        if not project.spack_instance.startswith('/cvmfs/'):
+            print('Spack instance not in cvmfs.')
+            sys.exit(1)
+        abssetupscript = os.path.join(project.spack_instance, 'setup-env.sh')
+        if not os.path.exists(abssetupscript):
+            print('Spack setup script setup-env.sh does not exist.')
+            sys.exit(1)
+    else:
+        abssetupscript = project_utilities.get_setup_script_path()
+        if not abssetupscript.startswith('/cvmfs/'):
+            setupscript = os.path.join(stage.workdir,'setup_experiment.sh')
+            larbatch_posix.copy(abssetupscript, setupscript)
+            jobsub_workdir_files_args.extend(['-f', 'dropbox://%s' % setupscript])
+            abssetupscript = ''
 
     # Copy and rename batch script to the work directory.
 
@@ -3285,15 +3301,20 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds):
     command.extend([' --group', project_utilities.get_experiment()])
     command.extend([' -g'])
     command.extend([' -c', 'wrapper.fcl'])
-    command.extend([' --ups', ','.join(project.ups)])
-    if project.release_tag != '':
-        command.extend([' -r', project.release_tag])
-    command.extend([' -b', project.release_qual])
+    if project.spack_instance == '':
+        command.extend([' --ups', ','.join(project.ups)])
+        if project.release_tag != '':
+            command.extend([' -r', project.release_tag])
+        command.extend([' -b', project.release_qual])
     if project.local_release_dir != '':
         # Add a placeholder file type / extension.
         command.extend([' --localtar', '%s.tgz' % project.local_release_dir])
     if project.local_release_tar != '':
         command.extend([' --localtar', project.local_release_tar])
+    if project.spack_environment != '':
+        command.extend([' --spack_environment', project.spack_environment])
+    if len(project.spack_load) != 0:
+        command.extend([' --spack_load', ','.join(project.spack_load)])
     command.extend([' --workdir', stage.workdir])
     command.extend([' --outdir', stage.outdir])
     command.extend([' --logdir', stage.logdir])
@@ -3478,6 +3499,9 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds):
         if abssetupscript != '':
             start_command.extend([' --init', abssetupscript])
 
+        if project.spack_environment != '':
+            start_command.extend([' --spack_environment', project.spack_environment])
+
         if stage.num_jobs > 0 and stage.max_files_per_job > 0:
             start_command.extend([' --max_files', '%d' % (stage.num_jobs * stage.max_files_per_job)])
 
@@ -3555,6 +3579,9 @@ def dojobsub(project, stage, makeup, recur, dryrun, retain, use_rcds):
 
         if abssetupscript != '':
             stop_command.extend([' --init', abssetupscript])
+
+        if project.spack_environment != '':
+            stop_command.extend([' --spack_environment', project.spack_environment])
 
         # Done with stop command.
 

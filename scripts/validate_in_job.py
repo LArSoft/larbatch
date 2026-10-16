@@ -331,6 +331,7 @@ def main():
     
     #decide at this point if all the checks are ok. Write to missing_file_list first
     missing_list.write('%d \n' %status)
+    missing_list.close()
     
     if status == 0:
         bad_list.close()

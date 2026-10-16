@@ -34,6 +34,9 @@ class ProjectDef:
         self.num_jobs = 1                 # Number of jobs.
         self.max_files_per_job = 0        # Max number of files per job.
         self.ups = []                     # Top level ups products.
+        self.spack_instance = ''          # Path of spack instance (if any).
+        self.spack_environment = ''       # Name of spack environment to activate.
+        self.spack_load = []              # Spack load packages.
         self.os = ''                      # Batch OS.
         self.resource = 'DEDICATED,OPPORTUNISTIC' # Jobsub resources.
         self.role = ''                    # Role (normally Analysis or Production).
@@ -112,6 +115,27 @@ class ProjectDef:
 
         if len(self.ups) == 0:
             self.ups = get_ups_products().split(',')
+
+        # Spack instance (subelement).
+
+        spack_instance_elements = project_element.getElementsByTagName('spackinstance')
+        for spack_instance_element in spack_instance_elements:
+            if spack_instance_element.parentNode == project_element:
+                self.spack_instance = spack_instance_element.firstChild.data
+
+        # Spack environment (subelement).
+
+        spack_environment_elements = project_element.getElementsByTagName('spackenvironment')
+        for spack_environment_element in spack_environment_elements:
+            if spack_environment_element.parentNode == project_element:
+                self.spack_environment = spack_environment_element.firstChild.data
+
+        # Spack load packages (subelement).
+
+        spack_load_elements = project_element.getElementsByTagName('spackload')
+        for spack_load_element in spack_load_elements:
+            if spack_load_element.parentNode == project_element:
+                self.spack_load.append(spack_load_element.firstChild.data)
 
         # OS (subelement).
 
@@ -493,6 +517,11 @@ class ProjectDef:
         result += 'Top level ups products:\n'
         for prod in self.ups:
             result += '    %s\n' % prod
+        result += 'Spack instance = %s\n' % self.spack_instance
+        result += 'Spack environment = %s\n' % self.spack_environment
+        result += 'Spack load packages:\n'
+        for load in self.spack_load:
+            result += '    %s\n' % load
         result += 'OS = %s\n' % self.os
         result += 'Resource = %s\n' % self.resource
         result += 'Role = %s\n' % self.role

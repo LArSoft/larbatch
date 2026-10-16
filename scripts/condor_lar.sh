@@ -65,6 +65,11 @@
 # --mrb                   - Ignored (for compatibility).
 # --srt                   - Exit with error status (SRT run time no longer supported).
 #
+# Spack options.
+#
+# --spack_environment     - Spack environment to activate.
+# --spack_load            - Comma-separated list of spack packages to load.
+#
 # Other options.
 #
 # -h, --help              - Print help.
@@ -211,6 +216,8 @@ QUAL=""
 LOCALTAR=""
 LOCALTARBASE=""
 LOCALTARNAME=""
+SPACK_ENVIRONMENT=""
+SPACK_LOAD=""
 INTERACTIVE=0
 GRP=""
 OUTDIR=""
@@ -498,6 +505,22 @@ while [ $# -gt 0 ]; do
       exit 1
       ;;
 
+    # Spack environment.
+    --spack_environment )
+      if [ $# -gt 1 ]; then
+        SPACK_ENVIRONMENT=$2
+        shift
+      fi
+      ;;
+
+    # Spack load packages (comma-separated list).
+    --spack_load )
+      if [ $# -gt 1 ]; then
+        SPACK_LOAD=$2
+        shift
+      fi
+      ;;
+
     # Interactive flag.
     -i|--interactive )
       INTERACTIVE=1
@@ -777,9 +800,9 @@ echo "UPS_OVERRIDE: $UPS_OVERRIDE"
 
 echo "Condor dir input: $CONDOR_DIR_INPUT"
 
-# Initialize ups.
+# Initialize run environment (ups/spack).
 
-echo "Initializing ups."
+echo "Initializing run environment."
 
 if [ x$INIT != x ]; then
   if [ ! -f $INIT ]; then
@@ -793,8 +816,14 @@ else
   source ${CONDOR_DIR_INPUT}/setup_experiment.sh
 fi
 
-echo PRODUCTS=$PRODUCTS
-echo "ups flavor: `ups flavor`"
+if [ x$UPS_DIR != x ]; then
+  echo PRODUCTS=$PRODUCTS
+  echo "ups flavor: `ups flavor`"
+fi
+
+if [ x$SPACK_ROOT != x ]; then
+  echo "SPACK_ROOT=$SPACK_ROOT"
+fi
 
 # Set GROUP environment variable.
 
@@ -1008,7 +1037,7 @@ if [ x$MIDSCRIPT != x ]; then
   fi
 fi
 
-# UPS run time environment setup goes here.
+# UPS/Spack run time environment setup goes here.
 
 # Setup local larsoft test release from tarball.
 # This section handles the following cases.
@@ -1019,8 +1048,10 @@ fi
 # be found using a symbolic link from $CONDOR_DIR_INPUT
 #
 # In case 2, the tarball must still be unpacked in a newly created local directory.
+#
+# Tarball not currently supported with spack.
 
-if [ x$LOCALTAR != x ]; then
+if [ x$UPS_DIR != x -a x$LOCALTAR != x ]; then
 
   installdir=''
 
@@ -1052,28 +1083,45 @@ if [ x$LOCALTAR != x ]; then
   export PRODUCTS=${installdir}:$PRODUCTS
 fi
 
-# Setup specified version of top level run time products
+# Setup specified version of top level ups run time products
 
-echo
-echo "PRODUCTS=$PRODUCTS"
-for prd in `echo $UPS_PRDS | tr , ' '`
-do
-  if ! ups active | grep -q $prd; then
-    echo "Setting up $prd $REL -q ${QUAL}."
-    if [ x$IFDHC_DIR != x -a x$IFBEAM_DIR = x ]; then
-      unsetup ifdhc
+if [ x$UPS_DIR != x ]; then
+  echo
+  echo "PRODUCTS=$PRODUCTS"
+  for prd in `echo $UPS_PRDS | tr , ' '`
+  do
+    if ! ups active | grep -q $prd; then
+      echo "Setting up $prd $REL -q ${QUAL}."
+      if [ x$IFDHC_DIR != x -a x$IFBEAM_DIR = x ]; then
+        unsetup ifdhc
+      fi
+      setup $prd $REL -q $QUAL
     fi
-    setup $prd $REL -q $QUAL
-  fi
-done
+  done
+  ups active
+fi
 
-ups active
+# Activate spack environment.
+
+if [ x$SPACK_ROOT != x -a x$SPACK_ENVIRONMENT != x ]; then
+  echo "Activating spack environment ${SPACK_ENVIRONMENT}."
+  spack env activate $SPACK_ENVIRONMENT
+  spack find -lc 2>&1
+
+  # Load spack packages.
+
+  for pkg in `echo $SPACK_LOAD | tr , ' '`
+  do
+    echo "Loading package ${pkg}."
+    spack load $pkg 2>&1
+  done
+fi
 
 cd $TMP/work
 
 # Make sure ifdhc has been set up.
 
-if [ x$IFDHC_DIR = x ]; then
+if [ x$UPS_DIR != x -a x$IFDHC_DIR = x ]; then
   echo "Setting up ifdhc again, because larsoft did not set it up."
   setup ifdhc
 fi
@@ -1993,12 +2041,14 @@ mv log.tar log
 # For copy back, setup up current version of ifdhc.
 # May be different than version setup by larsoft.
 
-echo "Setting up current version of ifdhc."
-if [ x$IFDHC_DIR != x ]; then
-  unsetup ifdhc
+if [ x$UPS_DIR != x ]; then
+  echo "Setting up current version of ifdhc."
+  if [ x$IFDHC_DIR != x ]; then
+    unsetup ifdhc
+  fi
+  setup ifdhc
+  echo "IFDHC_DIR=$IFDHC_DIR"
 fi
-setup ifdhc
-echo "IFDHC_DIR=$IFDHC_DIR"
 
 # Create remote output and log directories.
 

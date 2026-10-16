@@ -14,6 +14,10 @@
 # -g, --grid          - Be grid-friendly.
 # --init <path>       - Absolute path of environment initialization script (optional).
 #
+# Spack options.
+#
+# --spack_environment     - Spack environment to activate.
+#
 # End options.
 #
 # Created: H. Greenlee, 29-Aug-2012
@@ -28,6 +32,7 @@ LOGDIR=""
 GRID=0
 INIT=""
 IFDH_OPT=""
+SPACK_ENVIRONMENT=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -75,6 +80,14 @@ while [ $# -gt 0 ]; do
       fi
       ;;
 
+    # Spack environment.
+    --spack_environment )
+      if [ $# -gt 1 ]; then
+        SPACK_ENVIRONMENT=$2
+        shift
+      fi
+      ;;
+
     # Other.
     * )
       echo "Unknown option $1"
@@ -106,9 +119,9 @@ if [ x$SAM_PROJECT = x ]; then
   exit 1
 fi
 
-# Initialize ups products and mrb.
+# Initialize run environment (ups/spack).
 
-echo "Initializing ups and mrb."
+echo "Initializing run environment."
 
 if [ x$INIT != x ]; then
   if [ ! -f $INIT ]; then
@@ -122,15 +135,30 @@ else
   source ${CONDOR_DIR_INPUT}/setup_experiment.sh
 fi
 
-echo PRODUCTS=$PRODUCTS
+if [ x$UPS_DIR != x ]; then
+  echo PRODUCTS=$PRODUCTS
+fi
+
+if [ x$SPACK_ROOT != x ]; then
+  echo "SPACK_ROOT=$SPACK_ROOT"
+fi
 
 # Ifdh may already be setup by jobsub wrapper.
 # If not, set it up here.
 
 echo "IFDHC_DIR=$IFDHC_DIR"
-if [ x$IFDHC_DIR = x ]; then
+if [ x$UPS_DIR != x -a x$IFDHC_DIR = x ]; then
   echo "Setting up ifdhc, because jobsub did not set it up."
   setup ifdhc
+fi
+if [ x$SPACK_ROOT != x -a x$IFDHC_DIR = x ]; then
+  if [ x$SPACK_ENVIRONMENT != x ]; then
+    echo "Activating spack environment ${SPACK_ENVIRONMENT}."
+    spack env activate $SPACK_ENVIRONMENT
+    spack find -lc 2>&1
+  fi
+  echo "Loading ifdhc."
+  spack load ifdhc 2>&1
 fi
 echo "IFDHC_DIR=$IFDHC_DIR"
 

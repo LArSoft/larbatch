@@ -19,6 +19,10 @@
 # --max_files <n>     - Specify the maximum number of files to include in this project.
 # --prestage_fraction - Fraction of files that should be prestaged.
 #                       Specify as floating point number between 0 and 1.
+# Spack options.
+#
+# --spack_environment     - Spack environment to activate.
+#
 #
 # End options.
 #
@@ -39,6 +43,7 @@ INIT=""
 MAX_FILES=0
 PRESTAGE_FRACTION=0
 IFDH_OPT=""
+SPACK_ENVIRONMENT=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -130,6 +135,14 @@ while [ $# -gt 0 ]; do
       fi
       ;;
 
+    # Spack environment.
+    --spack_environment )
+      if [ $# -gt 1 ]; then
+        SPACK_ENVIRONMENT=$2
+        shift
+      fi
+      ;;
+
     # Other.
     * )
       echo "Unknown option $1"
@@ -180,9 +193,9 @@ if [ x$SAM_PROJECT = x ]; then
   exit 1
 fi
 
-# Initialize ups products and mrb.
+# Initialize run environment (ups/spack).
 
-echo "Initializing ups and mrb."
+echo "Initializing run environment."
 
 if [ x$INIT != x ]; then
   if [ ! -f $INIT ]; then
@@ -196,23 +209,42 @@ else
   source ${CONDOR_DIR_INPUT}/setup_experiment.sh
 fi
 
-echo PRODUCTS=$PRODUCTS
+if [ x$UPS_DIR != x ]; then
+  echo PRODUCTS=$PRODUCTS
+fi
+
+if [ x$SPACK_ROOT != x ]; then
+  echo "SPACK_ROOT=$SPACK_ROOT"
+  if [ x$SPACK_ENVIRONMENT != x ]; then
+    echo "Activating spack environment ${SPACK_ENVIRONMENT}."
+    spack env activate $SPACK_ENVIRONMENT
+    spack find -lc 2>&1
+  fi
+fi
 
 # Ifdh may already be setup by jobsub wrapper.
 # If not, set it up here.
 
 echo "IFDHC_DIR=$IFDHC_DIR"
-if [ x$IFDHC_DIR = x ]; then
+if [ x$UPS_DIR != x -a x$IFDHC_DIR = x ]; then
   echo "Setting up ifdhc, because jobsub did not set it up."
   setup ifdhc
+fi
+if [ x$SPACK_ROOT != x -a x$IFDHC_DIR = x ]; then
+  echo "Loading ifdhc."
+  spack load ifdhc 2>&1
 fi
 echo "IFDHC_DIR=$IFDHC_DIR"
 
 # Setup sam_web_client, if not already done.
 
-if [ x$SAM_WEB_CLIENT_DIR = x ]; then
+if [ x$UPS_DIR != x -a x$SAM_WEB_CLIENT_DIR = x ]; then
   echo "Setting up sam_web_client."
   setup sam_web_client
+fi
+if [ x$SPACK_ROOT != x -a x`which samweb` = x ]; then
+  echo "Loading sam-web-client."
+  spack load sam-web-client 2>&1
 fi
 echo "SAM_WEB_CLIENT_DIR=$SAM_WEB_CLIENT_DIR"
 
